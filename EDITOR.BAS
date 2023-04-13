@@ -405,7 +405,7 @@ END SUB
 
 SUB popMenu
 
-	IF sysApp = "MAPPER" AND tileMenu = 1 THEN
+	IF sysApp = "MAPPING" AND tileMenu = 1 THEN
 
 		LOCATE 16, 3: COLOR 44: PRINT UCASE$(pakName);
 		index = 0
@@ -611,29 +611,6 @@ SUB updScreen
 		LOCATE 2, 2: COLOR 44: PRINT "FILE:"; UCASE$(filen)
 		LOCATE 2, 29: COLOR 39: PRINT "MODE:LEVEL "
 		LOCATE 23, 30: COLOR 39: PRINT "x"; cam.x; "y"; cam.y
-
-	IF sysApp = "MAPPER" AND tileMenu = 1 THEN
-
-		LOCATE 16, 3: COLOR 44: PRINT UCASE$(pakName);
-		index = 0
-		FOR i = 0 TO objTypes
-			IF tool.y = 16 + i THEN
-				index = (index + i) * 38
-				LOCATE 16, 28: COLOR 48: PRINT sprNameList(tool.x + index); "|"; sprTypeData(tool.x + index)
-			END IF
-		NEXT
-
-
-		index = 0
-		FOR b = 1 TO 4
-			FOR i = 1 TO 38
-				index = index + 1
-				PUT (8 * i, 120 + (b * 8)), sprIndex(42 * index), PSET
-			NEXT
-		NEXT
-	END IF
-
-
 	END IF
 
 	IF sysApp = "SPRITE" THEN
@@ -667,9 +644,8 @@ SUB updScreen
 
 		LOCATE 2, 2: COLOR 44: PRINT "FILE:"; UCASE$(filen)
 		LOCATE 2, 29: COLOR 52: PRINT "MODE:SPRITE"
-	END IF
-	
-	'popMenu
+	END IF	
+	popMenu
 
 END SUB
 
