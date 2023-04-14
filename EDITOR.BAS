@@ -609,13 +609,12 @@ SUB userInput
 		IF sysApp = "MAPPING"  AND tileMenu = 1 THEN
 			tileMenu = 0
 			setMode = "MAP GRID"
-			setToolPos
+			setToolPosit
 		ELSE
 			tileMenu = 1
 			setMode = "TILE MENU"
 			setToolPos
 		END IF
-		updScreen
 
 	CASE 15
 	' open sprite grid in sprite mode (TAB)
@@ -629,7 +628,6 @@ SUB userInput
 			setToolPos
 			PUT (8, 144), frameIndex
 		END IF
-		updScreen
 
 	CASE 81
 	' place current open sprite onto sprite grid (PAGE DOWN)
