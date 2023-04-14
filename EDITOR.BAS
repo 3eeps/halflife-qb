@@ -484,9 +484,11 @@ SUB updScreen
 	IF sysApp = "MAPPING" THEN
 		sprGrid = 0
 		
-		' side graphics
+		' top text and side livery
+		LOCATE 2, 2: COLOR 44: PRINT "FILE:"; UCASE$(filen)					
 		LINE (224, 0)-(320, 200), 39, BF
-		LINE (224, 16)-(312, 192), 0, BF
+		LINE (224, 16)-(312, 192), 0, BF		
+		LOCATE 2, 29: COLOR 39: PRINT "MODE:LEVEL "
 
 ' *** make this smaller to improve perf
 
@@ -496,14 +498,13 @@ SUB updScreen
 				sprType = gridMap(x + cam.x, y + cam.y)
 				IF sprType THEN PUT (x * 8, y * 8), sprIndex(sprType)
 			NEXT
-		NEXT
+		NEXT		
 
+		' bottom tool pos text
+		LOCATE 23, 30: COLOR 39: PRINT "x"; cam.x; "y"; cam.y
+		
 		' current tool position
 		PUT (tool.x * 8, tool.y * 8), toolSpr(tool.spr)
-
-		LOCATE 2, 2: COLOR 44: PRINT "FILE:"; UCASE$(filen)
-		LOCATE 2, 29: COLOR 39: PRINT "MODE:LEVEL "
-		LOCATE 23, 30: COLOR 39: PRINT "x"; cam.x; "y"; cam.y
 		
 		' tile menu
 		IF tileMenu = 1 THEN	
@@ -528,14 +529,12 @@ SUB updScreen
 	IF sysApp = "SPRITE" THEN
 		tileMenu = 0
 		
-		' side graphics
+		' top text and side livery
+		LOCATE 2, 2: COLOR 44: PRINT "FILE:"; UCASE$(filen)
 		LINE (224, 0)-(320, 200), 52, BF
 		LINE (224, 16)-(312, 192), 0, BF
-		
-		' top text
-		LOCATE 2, 2: COLOR 44: PRINT "FILE:"; UCASE$(filen)
 		LOCATE 2, 29: COLOR 52: PRINT "MODE:SPRITE"
-		
+					
 		' draw large grid
 		FOR x = 8 TO 15
 			FOR y = 16 TO 23
@@ -547,7 +546,7 @@ SUB updScreen
 			NEXT
 		NEXT
 
-' *** could this be a cause of funny pixels??? grid(y,x)
+' *** could this be a cause of funny pixels too??? grid(y,x)
 
 		' draw 8x8 realtime grid
 		FOR x = 0 TO 8
@@ -616,6 +615,7 @@ SUB userInput
 			setMode = "TILE MENU"
 			setToolPos
 		END IF
+		updScreen
 
 	CASE 15
 	' open sprite grid in sprite mode (TAB)
@@ -629,6 +629,7 @@ SUB userInput
 			setToolPos
 			PUT (8, 144), frameIndex
 		END IF
+		updScreen
 
 	CASE 81
 	' place current open sprite onto sprite grid (PAGE DOWN)
