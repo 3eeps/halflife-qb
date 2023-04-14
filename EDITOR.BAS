@@ -28,7 +28,6 @@ END TYPE
 DIM SHARED tool AS obj
 DIM SHARED cam  AS obj
 
-DIM SHARED loadMap
 DIM SHARED gridx
 DIM SHARED gridy
 DIM SHARED grid(8, 8)
@@ -62,16 +61,13 @@ DIM SHARED sprGrid
 DIM SHARED objTypes
 
 initEditor
-
 BADFILE:
 	sysTask = ""
 	filen = ""
-
 DO
 	userInput
 	updScreen
 	SLEEP
-
 LOOP UNTIL exitApp = 1
 WHILE INKEY$ <> "": WEND
 SYSTEM
@@ -80,9 +76,7 @@ SUB handleFile
 
 	WHILE INKEY$ <> "": WEND
 	SELECT CASE sysTask
-
 		CASE "NEW GFX"
-
 			FOR x = 0 TO gSize
 				FOR y = 0 TO gSize
 					grid(x, y) = 0
@@ -91,7 +85,6 @@ SUB handleFile
 			filen = ""
 
 		CASE "SAVE GFX"
-
 			LOCATE 23, 2: COLOR 44: INPUT "GFX NAME:", filen
 			OPEN filen FOR OUTPUT AS #1
 			FOR x = 0 TO 8
@@ -107,7 +100,6 @@ SUB handleFile
 			CLOSE #1
 
 		CASE "LOAD GFX"
-
 			LOCATE 23, 2: COLOR 44: INPUT "LOAD GFX:", filen
 			OPEN filen FOR INPUT AS #1
 			FOR x = 0 TO 8
@@ -118,15 +110,11 @@ SUB handleFile
 			CLOSE #1
 			updScreen
 
-'============================= PAK
 
 		CASE "SAVE PAK"
-		' create a pak file from user made grid
-
 			CLS
 			PUT (8, 8), frameIndex, PSET
 			ERASE frameIndex
-
 			index = 0
 			FOR b = 1 TO 4
 				FOR i = 1 TO 38
@@ -137,8 +125,7 @@ SUB handleFile
 
 			LOCATE 23, 2: INPUT "PAK NAME:", filen
 			OPEN filen FOR OUTPUT AS #1
-			total = (SprNum * 42) + 1
-
+			total = (SprNum * 42) + 1			
 			FOR i = 1 TO total
 				PRINT #1, frameIndex(i)
 			NEXT
@@ -150,52 +137,42 @@ SUB handleFile
 			FOR i = 1 TO SprNum
 				PRINT #1, sprTypeData(i)
 			NEXT
-
 			CLOSE #1
 			filen = ""
 
 		CASE "LOAD PAK"
-
 			LOCATE 23, 2: COLOR 44: INPUT "LOAD PAK: ", filen
 			OPEN filen FOR INPUT AS #1
 			fileLen = (SprNum * 42) + 1
 			FOR i = 1 TO fileLen
 				INPUT #1, sprIndex(i)
 			NEXT
-
 			index = 0
 			FOR i = 6386 TO 6537
 				index = index + 1
 				INPUT #1, sprNameList(index)
 			NEXT
-
 			index = 0
 			FOR i = 6538 TO 6689
 				index = index + 1
 				INPUT #1, sprTypeData(index)
 			NEXT
 			CLOSE #1
-
 			pakName = filen
 			filen = ""
 
-' ========================== PAL
-
 		CASE "NEW PAL"
-
 			FOR i = 1 TO 16
 				LOCATE 23, 2: COLOR 44: INPUT "COLOR:", colorPal(i)
 			NEXT
 
 		CASE "LIST PAL"
-
 			FOR i = 1 TO 16
 				 COLOR colorPal(i): PRINT colorPal(i)
 			NEXT
 			SLEEP
 
 		CASE "SAVE PAL"
-
 			LOCATE 23, 2: COLOR 44: INPUT "PAL NAME:", filen
 			OPEN filen FOR OUTPUT AS #1
 			FOR i = 1 TO 16
@@ -205,7 +182,6 @@ SUB handleFile
 			filen = ""
 
 		CASE "LOAD PAL"
-
 			LOCATE 23, 2: COLOR 44: INPUT "LOAD PAL:", filen
 			OPEN filen FOR INPUT AS #1
 			FOR i = 1 TO 16
@@ -214,10 +190,7 @@ SUB handleFile
 			CLOSE #1
 			filen = ""
 
-' ======================== MAP
-
 		CASE "NEW MAP"
-
 			FOR x = 0 TO gmSize
 				FOR y = 0 TO gmSize
 					gridMap(x, y) = 0
@@ -225,7 +198,6 @@ SUB handleFile
 			NEXT
 
 		CASE "SAVE MAP"
-
 			COLOR 44: LOCATE 23, 2: INPUT "MAP NAME: ", filen
 			OPEN filen FOR OUTPUT AS #1
 			FOR x = 0 TO gmSize
@@ -241,7 +213,6 @@ SUB handleFile
 			CLOSE #1
 
 		CASE "LOAD MAP"
-
 			COLOR 44: LOCATE 23, 2: INPUT "LOAD MAP: ", filen
 			OPEN filen FOR INPUT AS #1
 			FOR x = 0 TO gmSize
@@ -250,7 +221,6 @@ SUB handleFile
 				NEXT
 			NEXT
 			CLOSE #1
-
 	END SELECT
 	sysTask = ""
 
@@ -260,17 +230,9 @@ SUB handleMap
 
 	WHILE INKEY$ <> "": WEND
 	SELECT CASE sysTask
-
-		CASE "DEL TILE"
-
-' ***this crashes editor
-			'grid(cam.x + (tool.x + 8), cam.y + (tool.y - 8)) = 0
-
 		CASE "REPL TILE"
-
 			LOCATE 23, 2: INPUT "REPLACE:", sprite0
 			LOCATE 23, 2: INPUT "WITH:", sprite1
-
 			FOR x = 0 TO gSize
 				FOR y = 0 TO gSize
 					IF gridMap(x + 20, y + 12) = sprite0 * 42 THEN gridMap(x + 20, y + 12) = sprite1 * 42
@@ -278,11 +240,9 @@ SUB handleMap
 			NEXT
 
 		CASE "FILL"
-
 			LOCATE 23, 2: INPUT "COORDx:", coord0
 			LOCATE 23, 2: INPUT "COORDy:", coord1
 			LOCATE 23, 2: INPUT "FILL SPR#:", getSpr
-
 			FOR x = 0 TO coord0
 				FOR y = 0 TO coord1
 					gridMap(x + 20, y + 12) = getSpr * 42
@@ -290,18 +250,15 @@ SUB handleMap
 			NEXT
 
 		CASE "RAND"
-
 			LOCATE 23, 2: INPUT "COORDx:", coord0
 			LOCATE 23, 2: INPUT "COORDy:", coord1
 			LOCATE 23, 2: INPUT "#1-255:", noiseNum
 			LOCATE 23, 2: INPUT "SPR#:", getSpr
-
 			FOR x = 0 TO coord0
 				FOR y = 0 TO coord1
 					IF INT(RND * noiseNum) + 1 = 1 THEN gridMap(x + 20, y + 12) = getSpr * 42
 				NEXT
 			NEXT
-
 	END SELECT
 	sysTask = ""
 
@@ -311,20 +268,15 @@ SUB handleSprite
 
 	WHILE INKEY$ <> "": WEND
 	SELECT CASE sysTask
-
 		CASE "DEL PIXEL"
-
 			grid(tool.x - 8, tool.y - 16) = 0
 
 		CASE "IREM"
-
 			tool.clr = grid(tool.x - 8, tool.y - 16)
 
 		CASE "REPL PIXEL"
-
 			LOCATE 23, 2: COLOR 44: INPUT "REPLACE:", color0
 			LOCATE 23, 2: INPUT "WITH:", color1
-
 			FOR x = 0 TO gSize
 				FOR y = 0 TO gSize
 					IF grid(x, y) = color0 THEN grid(x, y) = color1
@@ -332,7 +284,6 @@ SUB handleSprite
 			NEXT
 
 		CASE "DROP"
-
 			index = 0
 			FOR i = 0 TO 3
 				IF tool.x = 18 + i THEN
@@ -341,7 +292,6 @@ SUB handleSprite
 					LOCATE 23, 2: INPUT "TYPE:", sprTypeData(tool.y + index)
 				END IF
 			NEXT
-
 			PUT (8, 144), frameIndex, PSET
 			FOR x = 0 TO 8
 				FOR y = 0 TO 8
@@ -349,7 +299,6 @@ SUB handleSprite
 				NEXT
 			NEXT
 			GET (8, 144)-(312, 176), frameIndex
-
 	END SELECT
 	sysTask = ""
 
@@ -358,31 +307,27 @@ END SUB
 SUB initEditor
 
 	SCREEN 13
-
 	sysApp = "SPRITE"
 	setMode = "DRAW"
 	tool.x = 8
 	tool.y = 16
-
 	objTypes = 10
-
 	tool.spr = 42
 	tool.clr = 2
-
 	gmSize = 100
 	gSize = 7
-
 	cam.x = 12
 	cam.y = 20
-
 	SprNum = 152
 
+	' load default 16 color pal
 	FOR i = 1 TO 16
 		colorPal(i) = i
 	NEXT
-
+	
 	GET (8, 144)-(312, 176), frameIndex
 
+	' load tool sprite
 	OPEN "TOOL.GFX" FOR INPUT AS #1
 	FOR x = 0 TO 8
 		FOR y = 0 TO 8
@@ -398,7 +343,7 @@ SUB initEditor
 	GET (0, 0)-(8, 8), toolSpr(42)
 	ERASE src
 	CLS
-
+	
 	updScreen
 
 END SUB
@@ -442,32 +387,25 @@ END SUB
 SUB setToolPos
 
 	SELECT CASE setMode
-
 		CASE "DRAW"
-
 			tool.x = 8
 			tool.y = 16
 
 		CASE "MAP GRID"
-
 			tool.x = 20
 			tool.y = 12
 
 		CASE "TILE MENU"
-
 			tool.x = 12
 			tool.y = 16
 
 		CASE "GRID"
-
 			tool.x = 21
 			tool.y = 2
 
 		CASE "PICK"
-
 			tool.x = 18
 			tool.y = 12
-
 	END SELECT
 
 END SUB
@@ -478,43 +416,34 @@ SUB sysConsole
 	LOCATE 23, 8: COLOR 17: PRINT "'HELP' FOR COMMANDS"
 	LOCATE 23, 2: COLOR 44: INPUT ">>>: ", console
 	SELECT CASE console
-
 		CASE "mem"
-
 			LOCATE 23, 2: COLOR 48: PRINT "USED:"; 354418 - FRE(-1); "/"; 354418
 			SLEEP
 
 		CASE "exit"
-
 			exitApp = 1
 
 		CASE "save pak"
-
 			IF sysApp = "SPRITE" THEN sysTask = "SAVE PAK"
 			handleFile
-																																					
-		CASE "new pal"
 
+		CASE "new pal"
 			IF sysApp = "SPRITE" THEN sysTask = "NEW PAL"
 			handleFile
 
 		CASE "list pal"
-
 			IF sysApp = "SPRITE" THEN sysTask = "LIST PAL"
 			handleFile
-
+			
 		CASE "load pal"
-
 			IF sysApp = "SPRITE" THEN sysTask = "LOAD PAL"
 			handleFile
 
 		CASE "save pal"
-
 			IF sysApp = "SPRITE" THEN sysTask = "SAVE PAL"
 			handleFile
 
 		CASE "list 256"
-
 			IF sysApp = "SPRITE" THEN
 				FOR i = 0 TO 128
 					COLOR i: PRINT i;
@@ -527,7 +456,6 @@ SUB sysConsole
 			END IF
 
 		CASE "color"
-
 			IF sysApp = "SPRITE" THEN
 				WHILE INKEY$ <> "": WEND
 				LOCATE 23, 2: COLOR 8: INPUT "COLOR:", num
@@ -535,51 +463,51 @@ SUB sysConsole
 			END IF
 
 		CASE "load pak"
-
 			sysTask = "LOAD PAK"
 			handleFile
 
 		CASE "new"
-
-			IF sysApp = "MAPPING" THEN sysTask = "NEW MAP"
-			IF sysApp = "SPRITE" THEN sysTask = "NEW GFX"
+			IF sysApp = "MAPPING" THEN 
+				sysTask = "NEW MAP"
+			ELSE 
+				sysTask = "NEW GFX"
+			END IF
 			handleFile
 
 		CASE "load"
-
-			IF sysApp = "MAPPING" THEN sysTask = "LOAD MAP"
-			IF sysApp = "SPRITE" THEN sysTask = "LOAD GFX"
+			IF sysApp = "MAPPING" THEN 
+				sysTask = "LOAD MAP"
+			ELSE 
+				sysTask = "LOAD GFX"
+			END IF
 			handleFile
 
 		CASE "save"
-
-			IF sysApp = "MAPPING" THEN sysTask = "SAVE MAP"
-			IF sysApp = "SPRITE" THEN sysTask = "SAVE GFX"
+			IF sysApp = "MAPPING" THEN 
+				sysTask = "SAVE MAP"
+			ELSE
+				sysTask = "SAVE GFX"
+			END IF
 			handleFile
 
 		CASE "repl"
-
 			IF sysApp = "MAPPING" THEN
 				sysTask = "REPL TILE"
 				handleMap
-
 			ELSEIF sysApp = "SPRITE" THEN
 				sysTask = "REPL PIXEL"
 				handleSprite
 			END IF
 
 		CASE "add rnd"
-
 			IF sysApp = "MAPPING" THEN sysTask = "RANDOM"
 			handleMap
 
 		CASE "fill"
-
 			IF sysApp = "MAPPING" THEN sysTask = "FILL"
 			handleMap
 
 		CASE "dir"
-
 			FILES "\*.*"
 			SLEEP
 
@@ -593,31 +521,60 @@ END SUB
 SUB updScreen
 
 	IF sysApp = "MAPPING" THEN
-	 
+		sprGrid = 0
+		
+		' side graphics
 		LINE (224, 0)-(320, 200), 39, BF
 		LINE (224, 16)-(312, 192), 0, BF
 
+' *** make this smaller to improve perf
+
+		' render map window
 		FOR x = 1 TO 32
-			gridx = x + cam.x
 			FOR y = 2 TO 21
-				gridy = y + cam.y
-				sprType = gridMap(gridx, gridy)
+				sprType = gridMap(x + cam.x, y + cam.y)
 				IF sprType THEN PUT (x * 8, y * 8), sprIndex(sprType)
 			NEXT
 		NEXT
 
+		' current tool position
 		PUT (tool.x * 8, tool.y * 8), toolSpr(tool.spr)
 
 		LOCATE 2, 2: COLOR 44: PRINT "FILE:"; UCASE$(filen)
 		LOCATE 2, 29: COLOR 39: PRINT "MODE:LEVEL "
 		LOCATE 23, 30: COLOR 39: PRINT "x"; cam.x; "y"; cam.y
-	END IF
+		
+		' tile menu
+		IF tileMenu = 1 THEN	
+			LOCATE 16, 3: COLOR 44: PRINT UCASE$(pakName);
+			index = 0
+			FOR i = 0 TO objTypes
+				IF tool.y = 16 + i THEN
+					index = (index + i) * 38
+					LOCATE 16, 28: COLOR 48: PRINT sprNameList(tool.x + index); "|"; sprTypeData(tool.x + index)
+				END IF
+			NEXT
+			index = 0
+			FOR b = 1 TO 4
+				FOR i = 1 TO 38
+					index = index + 1
+					PUT (8 * i, 120 + (b * 8)), sprIndex(42 * index), PSET
+				NEXT
+			NEXT
+		END IF
 
 	IF sysApp = "SPRITE" THEN
-
+		tileMenu = 0
+		
+		' side graphics
 		LINE (224, 0)-(320, 200), 52, BF
 		LINE (224, 16)-(312, 192), 0, BF
-
+		
+		' top text
+		LOCATE 2, 2: COLOR 44: PRINT "FILE:"; UCASE$(filen)
+		LOCATE 2, 29: COLOR 52: PRINT "MODE:SPRITE"
+		
+		' draw large grid
 		FOR x = 8 TO 15
 			FOR y = 16 TO 23
 				IF grid(x - 8, y - 16) THEN
@@ -628,24 +585,39 @@ SUB updScreen
 			NEXT
 		NEXT
 
-		LOCATE 23, 30: COLOR 52: PRINT "x"; tool.x; "y"; tool.y
+' *** could this be a cause of funny pixels??? grid(y,x)
 
+		' draw 8x8 realtime grid
 		FOR x = 0 TO 8
 			FOR y = 0 TO 8
 				PSET (x + 110, y + 80), grid(y, x)
 			NEXT
 		NEXT
 
+		' current tool position
 		LOCATE tool.x, tool.y: COLOR tool.clr: PRINT CHR$(254)
 
+		' draw color panel
 		FOR i = 1 TO 16
 			LOCATE 18, i + 12: COLOR colorPal(i): PRINT CHR$(254)
 		NEXT
+		
+		' pak menu
+		IF sprGrid = 1 THEN
+			index = 0
+			FOR i = 0 TO objTypes
+				IF tool.x = 18 + i THEN
+					index = (index + i) * 38
+					LOCATE 16, 28: COLOR 48: PRINT sprNameList(tool.y + index); "|"; sprTypeData(tool.y + index)
+				END IF
+			NEXT
+			PUT (tool.y * 8, tool.x * 8), toolSpr(tool.spr)
+			'IF setMode = "DRAW" THEN LOCATE tool.x, tool.y: COLOR 44: PRINT CHR$(249)
+		END IF	
 
-		LOCATE 2, 2: COLOR 44: PRINT "FILE:"; UCASE$(filen)
-		LOCATE 2, 29: COLOR 52: PRINT "MODE:SPRITE"
+		' bottom text tool pos
+		LOCATE 23, 30: COLOR 52: PRINT "x"; tool.x; "y"; tool.y
 	END IF	
-	popMenu
 
 END SUB
 
@@ -653,23 +625,19 @@ SUB userInput
 
 	k = INP(96)
 	SELECT CASE k
-
 	CASE 41
 	' open console (~)
-
 		sysConsole
 
 	CASE 59
 	' set app to sprite mode (F1)
-
 		sysApp = "SPRITE"
-		setMode = "DRAW"
+		setMode = "DRAW"		
 		setToolPos
 		CLS
 
 	CASE 60
 	' set app to map mode (F2)
-
 		sysApp = "MAPPING"
 		setMode = "MAP GRID"
 		setToolPos
@@ -677,40 +645,31 @@ SUB userInput
 
 	CASE 18
 	' open sprite menu in map mode (E)
-
-		loadMap = 1
-
-		IF sysApp = "MAPPING" AND pakName <> "" THEN
-			IF tileMenu = 1 THEN
-				tileMenu = 0
-				setMode = "MAP GRID"
-				setToolPos
-			ELSE
-				tileMenu = 1
-				setMode = "TILE MENU"
-				setToolPos
-			END IF
+		IF sysApp = "MAPPING"  AND tileMenu = 1 THEN
+			tileMenu = 0
+			setMode = "MAP GRID"
+			setToolPos
+		ELSE
+			tileMenu = 1
+			setMode = "TILE MENU"
+			setToolPos
 		END IF
 
 	CASE 15
 	' open sprite grid in sprite mode (TAB)
-
-		IF sysApp = "SPRITE" THEN
-			IF sprGrid = 1 THEN
-				sprGrid = 0
-				setMode = "DRAW"
-				setToolPos
-			ELSE
-				sprGrid = 1
-				setMode = "GRID"
-				setToolPos
-				PUT (8, 144), frameIndex
-			END IF
+		IF sysApp = "SPRITE" AND sprGrid = 1 THEN
+			sprGrid = 0
+			setMode = "DRAW"
+			setToolPos
+		ELSE
+			sprGrid = 1
+			setMode = "GRID"
+			setToolPos
+			PUT (8, 144), frameIndex
 		END IF
 
 	CASE 81
 	' place current open sprite onto sprite grid (PAGE DOWN)
-
 		IF sysApp = "SPRITE" AND setMode = "GRID" THEN
 			sysTask = "DROP"
 			handleSprite
@@ -718,15 +677,13 @@ SUB userInput
 
 	CASE 82
 	' position tool to pick a color in sprite mode (INS)
-
-		IF sysApp = "SPRITE" AND setMode <> "GRID" THEN
+		IF sysApp = "SPRITE" AND setMode <> "GRID" THEN			
 			setMode = "PICK"
 			setToolPos
 		END IF
 
 	CASE 73
 	' position tool for map and draw mode, depends on app state (PAGE UP)
-
 		IF sysApp = "MAPPING" THEN
 			setMode = "MAP GRID"
 			setToolPos
@@ -737,7 +694,6 @@ SUB userInput
 
 	CASE 79
 	' remove sprite/pixel on tool position, depends on app state (END)
-
 		IF sysApp = "MAPPING" AND setMode = "MAP GRID" THEN
 			sysTask = "DEL TILE"
 			handleMap
@@ -749,7 +705,6 @@ SUB userInput
 
 	CASE 17
 	' move tool (W)
-
 		IF sysApp = "MAPPING" THEN
 			IF setMode = "MAP GRID" AND cam.y > 0 THEN cam.y = cam.y - 1
 			IF setMode = "TILE MENU" AND tool.y > 16 THEN tool.y = tool.y - 1
@@ -761,7 +716,6 @@ SUB userInput
 
 	CASE 31
 	' move tool (S)
-
 		IF sysApp = "MAPPING" THEN
 			IF setMode = "MAP GRID" AND cam.y < 80 THEN cam.y = cam.y + 1
 			IF setMode = "TILE MENU" AND tool.y < 19 THEN tool.y = tool.y + 1
@@ -773,7 +727,6 @@ SUB userInput
 
 	CASE 30
 	' move tool (A)
-
 		IF sysApp = "MAPPING" THEN
 			IF setMode = "MAP GRID" AND cam.x > 0 THEN cam.x = cam.x - 1
 			IF setMode = "TILE MENU" AND tool.x > 1 THEN tool.x = tool.x - 1
@@ -786,12 +739,10 @@ SUB userInput
 
 	CASE 32
 	' move tool (D)
-
 		IF sysApp = "MAPPING" THEN
 			IF setMode = "MAP GRID" AND cam.x < 80 THEN cam.x = cam.x + 1
 			IF setMode = "TILE MENU" AND tool.x < 38 THEN tool.x = tool.x + 1
 			 
-
 		ELSEIF sysApp = "SPRITE" THEN
 			IF setMode = "GRID" AND tool.y < 38 THEN tool.y = tool.y + 1
 			IF setMode = "DRAW" AND tool.y > 15 AND tool.y < 23 THEN tool.y = tool.y + 1
@@ -799,8 +750,7 @@ SUB userInput
 		END IF
 											 
 	CASE 71
-	' main key to place and select colors and sprites (HOME)
-		
+	' main key to place and select colors and sprites (HOME)	
 		IF sysApp = "MAPPING" THEN
 			IF setMode = "TILE MENU" AND tileMenu = 1 THEN
 			
