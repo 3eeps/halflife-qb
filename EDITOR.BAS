@@ -1,6 +1,4 @@
 DEFINT A-Z
-DECLARE SUB popMenu ()
-DECLARE SUB startMenu ()
 DECLARE SUB selectSprite ()
 DECLARE SUB userInput ()
 DECLARE SUB drawMapApp ()
@@ -11,7 +9,6 @@ DECLARE SUB handleFile ()
 DECLARE SUB handleMap ()
 DECLARE SUB updScreen ()
 DECLARE SUB initEditor ()
-DECLARE SUB spriteMenu ()
 DECLARE SUB setToolPos ()
 
 RANDOMIZE TIMER
@@ -348,42 +345,6 @@ SUB initEditor
 
 END SUB
 
-SUB popMenu
-
-	IF sysApp = "MAPPING" AND tileMenu = 1 THEN
-
-		LOCATE 16, 3: COLOR 44: PRINT UCASE$(pakName);
-		index = 0
-		FOR i = 0 TO objTypes
-			IF tool.y = 16 + i THEN
-				index = (index + i) * 38
-				LOCATE 16, 28: COLOR 48: PRINT sprNameList(tool.x + index); "|"; sprTypeData(tool.x + index)
-			END IF
-		NEXT
-
-		index = 0
-		FOR b = 1 TO 4
-			FOR i = 1 TO 38
-				index = index + 1
-				PUT (8 * i, 120 + (b * 8)), sprIndex(42 * index), PSET
-			NEXT
-		NEXT
-
-	ELSEIF sysApp = "SPRITE" AND sprGrid = 1 THEN
-
-		index = 0
-		FOR i = 0 TO objTypes
-			IF tool.x = 18 + i THEN
-					index = (index + i) * 38
-			LOCATE 16, 28: COLOR 48: PRINT sprNameList(tool.y + index); "|"; sprTypeData(tool.y + index)
-			END IF
-		NEXT
-		PUT (tool.y * 8, tool.x * 8), toolSpr(tool.spr)
-		IF setMode = "DRAW" THEN LOCATE tool.x, tool.y: COLOR 44: PRINT CHR$(249)
-	END IF
-					 
-END SUB
-
 SUB setToolPos
 
 	SELECT CASE setMode
@@ -562,6 +523,7 @@ SUB updScreen
 				NEXT
 			NEXT
 		END IF
+	END IF
 
 	IF sysApp = "SPRITE" THEN
 		tileMenu = 0
