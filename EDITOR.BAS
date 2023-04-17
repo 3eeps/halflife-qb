@@ -17,14 +17,14 @@ ON ERROR GOTO BADFILE:
 TYPE obj
 	x AS INTEGER
 	y AS INTEGER
-	drawx AS INTEGER
-	drawy AS INTEGER
-	pickx AS INTEGER
-	picky AS INTEGER
+'	drawx AS INTEGER
+'	drawy AS INTEGER
+'	pickx AS INTEGER
+'	picky AS INTEGER
 	barx AS INTEGER
 	bary AS INTEGER
-	collide AS INTEGER
-	sprName AS STRING * 8
+'	collide AS INTEGER
+'	sprName AS STRING * 8
 	picked AS INTEGER
 	clr AS INTEGER
 	spr AS INTEGER
@@ -306,7 +306,6 @@ SUB initEditor
 
 	SCREEN 13
 	consoleColor = 43
-	GET (110, 80)-(118, 88), sprBuffer(42)
 	
 	sysApp = "SPRITE"
 	setMode = "DRAW"
@@ -355,20 +354,20 @@ SUB setToolPos
 		CASE "DRAW"
 			tool.x = 8
 			tool.y = 16
-			tool.drawx = 1
-			tool.drawy = 1
+			'tool.drawx = 1
+			'tool.drawy = 1
 
 		CASE "PICK COLOR"
 			tool.x = 18
 			tool.y = 12
-			tool.pickx = 1
-			tool.pickx = 1
+			'tool.pickx = 1
+			'tool.pickx = 1
 			
 		CASE "SPRITE BAR"
 			tool.x = 3
 			tool.y = 3
-			tool.barx = 1
-			tool.bary = 1
+			tool.barx = 0
+			tool.bary = 0
 	END SELECT
 
 END SUB
@@ -504,7 +503,7 @@ SUB updScreen
 
 	
 	IF sysApp = "SPRITE" THEN
-		LINE (24, 24)-(88, 88), 0, BF
+		LINE (24, 24)-(88, 88), 17, BF
 		FOR x = 1 TO 8
 			FOR y = 1 TO 8
 				index = barGrid(x, y)
@@ -607,7 +606,7 @@ SUB userInput
 		IF sysApp = "MAPPING" AND cam.y < 80 THEN cam.y = cam.y + 1
 		IF sysApp = "SPRITE" THEN
 			IF setMode = "DRAW" AND tool.x > 7 AND tool.x < 15 THEN tool.x = tool.x + 1
-			IF setMode = "SPRITE BAR" AND tool.bary < 8 THEN tool.bary = tool.bary + 1
+			IF setMode = "SPRITE BAR" AND tool.bary < 9 THEN tool.bary = tool.bary + 1
 		END IF
 
 	CASE 30
@@ -617,6 +616,7 @@ SUB userInput
 			IF setMode = "DRAW" AND tool.y > 16 AND tool.y < 24 THEN tool.y = tool.y - 1
 			IF setMode = "PICK COLOR" AND tool.y > 12 AND tool.y < 29 THEN tool.y = tool.y - 1
 			IF setMode = "SPRITE BAR" AND tool.barx > 0 THEN tool.barx = tool.barx - 1
+			
 		END IF
 
 	CASE 32
@@ -625,7 +625,7 @@ SUB userInput
 		IF sysApp = "SPRITE" THEN
 			IF setMode = "DRAW" AND tool.y > 15 AND tool.y < 23 THEN tool.y = tool.y + 1
 			IF setMode = "PICK COLOR" AND tool.y > 11 AND tool.y < 28 THEN tool.y = tool.y + 1
-			IF setMode = "SPRITE BAR" AND tool.barx < 8 THEN tool.barx = tool.barx + 1
+			IF setMode = "SPRITE BAR" AND tool.barx < 9 THEN tool.barx = tool.barx + 1
 		END IF
 											 
 	CASE 71
