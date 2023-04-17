@@ -44,7 +44,6 @@ DIM SHARED gridColor
 DIM SHARED filen AS STRING
 DIM SHARED src(8, 8)
 
-DIM SHARED sprBuffer(84)
 DIM SHARED toolSpr(84)
 
 DIM SHARED sprNameList(64) AS STRING
@@ -67,6 +66,8 @@ DIM SHARED pakName AS STRING
 
 DIM SHARED colorPal(16)
 DIM SHARED exitApp
+
+DIM SHARED sideBarIndex(8, 8)
 
 initEditor
 BADFILE:
@@ -294,9 +295,9 @@ SUB handleSprite
 			NEXT
 			
 		CASE "PLACE"
-			barGrid(tool.barx, tool.bary) = tool.barx * tool.bary
-			index = barGrid(tool.barx, tool.bary)
-			GET (110, 80)-(118, 88), frameIndex(42 * index)
+			index = sideBarIndex(tool.barx, tool.bary)
+			barGrid(tool.barx, tool.bary) = index
+			GET (110, 80)-(118, 88), frameIndex(38 * index)
 	END SELECT
 	sysTask = ""
 
@@ -324,6 +325,13 @@ SUB initEditor
 	cam.y = 11
 	
 	SprNum = 64
+	
+	FOR x = 1 to 8
+		FOR y = 1 to 8
+			index = index + 1
+			sideBarIndex(x, y) = index
+		NEXT
+	NEXT
 
 	FOR i = 1 TO 16
 		colorPal(i) = i
@@ -501,15 +509,16 @@ SUB updScreen
 		PUT (240, 88), toolSpr(tool.spr)
 	END IF
 
-	
 	IF sysApp = "SPRITE" THEN
+		IF setMode = "SPRITE BAR" THEN
 		LINE (24, 24)-(88, 88), 17, BF
 		FOR x = 1 TO 8
 			FOR y = 1 TO 8
 				index = barGrid(x, y)
-				IF index THEN PUT ((x + 3) * 8, (y + 3) * 8), frameIndex(42 * index)
+				IF index THEN PUT ((x + 3) * 8, (y + 3) * 8), frameIndex(38 * index)
 			NEXT
 		NEXT
+		END IF
 	
 		FOR x = 8 TO 15
 			FOR y = 16 TO 23
@@ -534,7 +543,7 @@ SUB updScreen
 		IF setMode = "DRAW" THEN LOCATE tool.x, tool.y: COLOR tool.clr: PRINT CHR$(254)
 		
 		' DEBUG_
-		LOCATE 23, 28: COLOR consoleColor: PRINT tool.barx; tool.bary; tool.barx * tool.bary
+		LOCATE 23, 28: COLOR consoleColor: PRINT tool.barx; tool.bary
 	END IF
 	
 END SUB
