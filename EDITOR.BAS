@@ -1,6 +1,7 @@
 DEFINT A-Z
 DECLARE SUB userInput ()
 DECLARE SUB handleSprite ()
+DECLARE SUB handleGame ()
 DECLARE SUB sysConsole ()
 DECLARE SUB handleFile ()
 DECLARE SUB updScreen ()
@@ -42,7 +43,6 @@ DIM SHARED maxAi
 
 DIM SHARED grid(8, 8)
 DIM SHARED gridMap(100, 100)
-DIM SHARED scene(100, 100)
 DIM SHARED gSize
 DIM SHARED gmSize
 
@@ -136,11 +136,13 @@ SUB handleFile
 				PRINT #1, frameIndex(i)
 			NEXT
 			
-			FOR x = 1 TO 8
-				FOR y = 1 TO 8
-					PRINT #1, barGrid(x, y)
-				NEXT
-			NEXT
+			'FOR x = 1 TO 8
+			' FOR y = 1 TO 8
+			'   sprPos = barGrid(x, y)
+			'   sprPos = sprPos * 44
+			'   PRINT #1, sprPos
+			' NEXT
+			'NEXT
 			CLOSE #1
 			filen = ""
 
@@ -219,6 +221,33 @@ SUB handleFile
 
 END SUB
 
+SUB handleGame
+
+	FOR i = 1 TO maxAi
+		actor(i).x = 30
+		actor(i).y = 45
+		actor(i).hp = 35
+		actor(i).state = "wand"
+		actor(i).energy = 45
+		actor(i).target = -1
+		actor(i).steps = 0
+		actor(i).direction = RND * 4
+		actor(i).spr = 44 * 1
+		actor(i).ftile = gridMap(actor(i).x, actor(i).y)
+		gridMap(actor(i).x, actor(i).y) = actor(i).spr
+		
+		FOR x = 0 TO gmSize
+			FOR y = 0 TO gmSize
+				index = gridMap(x, y)
+				index = index * 44
+				gridMap(x, y) = index
+			NEXT
+		NEXT
+		
+	NEXT
+	
+END SUB
+
 SUB handleSprite
 
 	COLOR consoleColor
@@ -231,6 +260,7 @@ SUB handleSprite
 			index = sideBarIndex(tool.barx, tool.bary)
 			barGrid(tool.barx, tool.bary) = index
 			GET (110, 80)-(118, 88), frameIndex(44 * index)
+			
 	END SELECT
 	sysTask = ""
 
@@ -289,26 +319,6 @@ SUB initEditor
 	NEXT
 	GET (0, 0)-(8, 8), toolSpr(42)
 	ERASE src
-		
-	FOR i = 1 TO maxAi
-		actor(i).x = 30
-		actor(i).y = 45
-		actor(i).hp = 35
-		actor(i).state = "wand"
-		actor(i).energy = 45
-		actor(i).target = -1
-		actor(i).steps = 0
-		actor(i).direction = RND * 4
-		actor(i).spr = 44 * 1
-		actor(i).ftile = scene(actor(i).x, actor(i).y)
-		scene(actor(i).x, actor(i).y) = actor(i).spr
-	NEXT
-		
-	FOR x = 0 TO 100
-		FOR y = 0 TO 100
-			scene(x, y) = gridMap(x, y)
-		NEXT
-	NEXT
 	CLS
 	updScreen
 
@@ -323,7 +333,7 @@ SUB setToolPos
 
 		CASE "PICK COLOR"
 			tool.x = 18
-			tool.y = 12
+			tool.y = 13
 			
 		CASE "SPRITE BAR"
 			tool.barx = 1
@@ -431,7 +441,7 @@ SUB updActors
 			GOTO skipAi
 		END IF
 
-		scene(actor(i).x, actor(i).y) = actor(i).ftile
+		gridMap(actor(i).x, actor(i).y) = actor(i).ftile
 		currPosx = actor(i).x
 		currPosy = actor(i).x
 	
@@ -463,7 +473,7 @@ SUB updActors
 				newx = actor(i).x + dx
 				newy = actor(i).y + dy
 		
-				IF scene(newx, newy) = 0 AND actor(i).steps < 4 THEN
+				IF gridMap(newx, newy) = 0 AND actor(i).steps < 4 THEN
 					actor(i).x = newx
 					actor(i).y = newy
 					actor(i).steps = actor(i).steps + 1
@@ -477,7 +487,7 @@ SUB updActors
 			
 				FOR x = actor(i).x - vdist TO actor(i).x + vdist
 					FOR y = actor(i).y - vdist TO actor(i).y + vdist
-						IF scene(x, y) = actor(i).target THEN
+						IF gridMap(x, y) = actor(i).target THEN
 							dx = actor(i).x - x
 							dy = actor(i).y - y
 							IF targetCount < maxTarget THEN
@@ -538,13 +548,13 @@ SUB updActors
 				ELSEIF dx > 0 AND dy = 0 THEN actor(i).x = actor(i).x - 1
 				END IF
 			
-				IF scene(actor(i).x + 1, actor(i).y) = actor(i).target THEN
+				IF gridMap(actor(i).x + 1, actor(i).y) = actor(i).target THEN
 					foundTarget = 1
-				ELSEIF scene(actor(i).x - 1, actor(i).y) = actor(i).target THEN
+				ELSEIF gridMap(actor(i).x - 1, actor(i).y) = actor(i).target THEN
 					foundTarget = 1
-				ELSEIF scene(actor(i).x, actor(i).y + 1) = actor(i).target THEN
+				ELSEIF gridMap(actor(i).x, actor(i).y + 1) = actor(i).target THEN
 					foundTarget = 1
-				ELSEIF scene(actor(i).x, actor(i).y - 1) = actor(i).target THEN
+				ELSEIF gridMap(actor(i).x, actor(i).y - 1) = actor(i).target THEN
 					foundTarget = 1
 				END IF
 		
@@ -552,12 +562,12 @@ SUB updActors
 					actor(i).x = currPosx
 					actor(i).x = currPosy
 					actor(i).target = -1
-					scene(actor(i).x, actor(i).y) = 0
+					gridMap(actor(i).x, actor(i).y) = 0
 					actor(i).energy = actor(i).energy + 25
 				END IF
 		END SELECT
-		actor(i).ftile = scene(actor(i).x, actor(i).y)
-		scene(actor(i).x, actor(i).y) = actor(i).spr
+		actor(i).ftile = gridMap(actor(i).x, actor(i).y)
+		gridMap(actor(i).x, actor(i).y) = actor(i).spr
 	
 skipAi:
 	NEXT
@@ -574,16 +584,17 @@ SUB updScreen
 	WAIT &H3DA, 8
 	
 	IF sysApp = "GAME" THEN
-		LINE (248, 24)-(80, 176), 0, BF
-		FOR x = 10 TO 30
-			FOR y = 3 TO 21
-				sprIndex = scene(x + win.x, y + win.y)
-				IF sprIndex THEN PUT (x * 8, y * 8), frameIndex(44 * sprIndex)
+		LINE (176, 24)-(312, 160), 0, BF
+		FOR x = 22 TO 38
+			FOR y = 3 TO 19
+				sprIndex = gridMap(x + win.x, y + win.y)
+				IF sprIndex THEN PUT (x * 8, y * 8), frameIndex(sprIndex)
 			NEXT
 		NEXT
-		PUT (160, 96), frameIndex(user.spr)
+		LOCATE 23, 30: COLOR modeColor: PRINT "x"; win.x; "y"; win.y
+		PUT (240, 88), frameIndex(user.spr)
 		
-		' debug
+		'DEBUG_
 		LOCATE 17: COLOR 39: PRINT "energy:"; actor(1).energy
 		LOCATE 18: COLOR 44: PRINT "hp:"; actor(1).hp
 		LOCATE 19: COLOR 8: PRINT "target:"; actor(1).target
@@ -626,23 +637,21 @@ SUB updScreen
 			FOR y = 0 TO 8
 				PSET (x + 110, y + 80), grid(y, x)
 			NEXT
-		NEXT
-
+		NEXT		
+		
 		FOR i = 1 TO 16
 			LOCATE 18, i + 12: COLOR colorPal(i): PRINT CHR$(254)
 		NEXT
-		
+				
 		IF setMode = "DRAW" THEN LOCATE tool.x, tool.y: COLOR tool.clr: PRINT CHR$(254)
-	END IF
-	' DEBUG_
-	LOCATE 22, 28: COLOR consoleColor: PRINT tool.barx; tool.bary;
+		IF setMode = "PICK COLOR" THEN LOCATE tool.x, tool.y: COLOR consoleColor: PRINT CHR$(248)
 	
 END SUB
 
 SUB userInput
 
-	IF sysApp = "GAME" THEN
-		scene(win.x + user.x, win.y + user.y) = user.ftile
+	IF sysApp = "GAME" AND setMode = "PLAY" THEN
+		gridMap(win.x + user.x, win.y + user.y) = user.ftile
 		SLEEP
 	END IF
 
@@ -673,7 +682,7 @@ SUB userInput
 		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.x > 0 THEN cam.x = cam.x - 1
 		IF sysApp = "SPRITE" THEN
 			IF setMode = "DRAW" AND tool.y > 16 AND tool.y < 24 THEN tool.y = tool.y - 1
-			IF setMode = "PICK COLOR" AND tool.y > 12 AND tool.y < 29 THEN tool.y = tool.y - 1
+			IF setMode = "PICK COLOR" AND tool.y > 13 AND tool.y < 29 THEN tool.y = tool.y - 1
 		END IF
 
 	CASE 32
@@ -714,6 +723,7 @@ SUB userInput
 		setMode = "PLAY"
 		modeText = "MODE:GAME"
 		modeColor = 47
+		handleGame
 		CLS
 		
 	CASE 15
@@ -755,9 +765,9 @@ SUB userInput
 			END IF
 		END IF
 	END SELECT
-	IF sysApp = "GAME" THEN
-		user.ftile = scene(win.x + user.x, win.y + user.y)
-		scene(win.x + user.x, win.y + user.y) = user.spr
+	IF sysApp = "GAME" AND setMode = "PLAY" THEN
+		user.ftile = gridMap(win.x + user.x, win.y + user.y)
+		gridMap(win.x + user.x, win.y + user.y) = user.spr
 	END IF
 
 END SUB
