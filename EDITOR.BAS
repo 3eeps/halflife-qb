@@ -1,8 +1,5 @@
 DEFINT A-Z
-DECLARE SUB selectSprite ()
 DECLARE SUB userInput ()
-DECLARE SUB drawMapApp ()
-DECLARE SUB drawSprApp ()
 DECLARE SUB handleSprite ()
 DECLARE SUB sysConsole ()
 DECLARE SUB handleFile ()
@@ -41,33 +38,28 @@ DIM SHARED gSize
 DIM SHARED gmSize
 DIM SHARED gridColor
 
+DIM SHARED sprIndex(2850)
+DIM SHARED frameIndex(2850)
 DIM SHARED filen AS STRING
 DIM SHARED src(8, 8)
 
 DIM SHARED toolSpr(84)
-
-DIM SHARED sprNameList(64) AS STRING
-DIM SHARED sprTypeData(64)
-DIM SHARED barGrid(64, 64)
+DIM SHARED barGrid(8, 8)
+DIM SHARED sideBarIndex(8, 8)
 
 DIM SHARED console AS STRING
 DIM SHARED sysTask AS STRING
 DIM SHARED sysApp AS STRING
 DIM SHARED setMode AS STRING
-
+DIM SHARED modeText AS STRING
 DIM SHARED consoleColor
 DIM SHARED modeColor
-DIM SHARED modeText AS STRING
-DIM SHARED sprNum
 
-DIM SHARED sprIndex(2850)
-DIM SHARED frameIndex(2850)
+DIM SHARED sprNum
 DIM SHARED pakName AS STRING
 
 DIM SHARED colorPal(16)
 DIM SHARED exitApp
-
-DIM SHARED sideBarIndex(8, 8)
 
 initEditor
 BADFILE:
@@ -123,8 +115,8 @@ SUB handleFile
 		CASE "SAVE PAK"
 			LOCATE 23, 2: INPUT "PAK NAME:", filen
 			OPEN filen FOR OUTPUT AS #1
-			total = (SprNum * 44)
-			FOR i = 1 TO total
+			fileLen = (SprNum * 44)
+			FOR i = 1 TO fileLen
 				PRINT #1, frameIndex(i)
 			NEXT
 			CLOSE #1
@@ -471,7 +463,7 @@ SUB updScreen
 		FOR x = 22 TO 38
 			FOR y = 3 TO 19
 				sprType = gridMap(x + cam.x, y + cam.y)
-				IF sprType = 0 THEN PUT (x * 8, y * 8), frameIndex(sprType)
+				IF sprType THEN PUT (x * 8, y * 8), sprIndex(sprType)
 			NEXT
 		NEXT
 		LOCATE 23, 30: COLOR modeColor: PRINT "x"; cam.x; "y"; cam.y
@@ -512,7 +504,7 @@ SUB updScreen
 		IF setMode = "DRAW" THEN LOCATE tool.x, tool.y: COLOR tool.clr: PRINT CHR$(254)
 		
 		' DEBUG_
-		LOCATE 23, 28: COLOR consoleColor: PRINT tool.barx; tool.bary
+		LOCATE 23, 28: COLOR consoleColor: PRINT tool.barx; tool.bary; sideBarIndex(tool.barx, tool.bary)
 	END IF
 	
 END SUB
