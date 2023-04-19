@@ -65,7 +65,7 @@ DIM SHARED modeText AS STRING
 DIM SHARED consoleColor
 DIM SHARED modeColor
 
-DIM SHARED sprNum
+DIM SHARED SprNum
 DIM SHARED pakName AS STRING
 
 DIM SHARED colorPal(16)
@@ -140,10 +140,10 @@ SUB handleFile
 			NEXT
 			
 			FOR x = 1 TO 8
-				FOR y = 1 to 8
+				FOR y = 1 TO 8
 					PRINT #1, barGrid(x, y)
 				NEXT
-			NEXT			
+			NEXT
 			CLOSE #1
 			filen = ""
 
@@ -156,10 +156,10 @@ SUB handleFile
 			NEXT
 			
 			FOR x = 1 TO 8
-				FOR y = 1 to 8
+				FOR y = 1 TO 8
 					INPUT #1, barGrid(x, y)
 				NEXT
-			NEXT		
+			NEXT
 			CLOSE #1
 			pakName = filen
 			filen = ""
@@ -305,13 +305,14 @@ SUB initEditor
 		actor(i).spr = 44 * 1
 		actor(i).ftile = scene(actor(i).x, actor(i).y)
 		scene(actor(i).x, actor(i).y) = actor(i).spr
-	NEXT	
+	NEXT
 		
 	FOR x = 0 TO 100
 		FOR y = 0 TO 100
 			scene(x, y) = gridMap(x, y)
 		NEXT
 	NEXT
+	CLS
 	updScreen
 
 END SUB
@@ -420,204 +421,6 @@ SUB sysConsole
 	console = ""
 	CLS
 	updScreen
-
-END SUB
-
-SUB updScreen
-
-	COLOR modeColor
-	LINE (0, 0)-(320, 16), modeColor, BF
-	LOCATE 2, 2: PRINT "FILE:"; UCASE$(filen)
-	LOCATE 2, 29: PRINT modeText
-	WAIT &H3DA, 8
-	
-	IF sysApp = "GAME" THEN
-		LINE (248, 24)-(80, 176), 0, BF
-		FOR x = 10 TO 30
-			FOR y = 3 TO 21
-				sprIndex = scene(x + win.x, y + win.y)
-				IF sprIndex THEN PUT (x * 8, y * 8), frameIndex(sprIndex)
-			NEXT
-		NEXT
-		PUT (160, 96), frameIndex(user.spr)
-		
-		' debug
-		LOCATE 17: COLOR 39: PRINT "energy:"; actor(1).energy
-		LOCATE 18: COLOR 44: PRINT "hp:"; actor(1).hp
-		LOCATE 19: COLOR 8: PRINT "target:"; actor(1).target
-		LOCATE 20: COLOR 48: PRINT "state:"; actor(1).state	
-	ELSE
-		LINE (24, 24)-(88, 88), 0, BF
-		FOR x = 1 TO 8
-			FOR y = 1 TO 8
-				sprIndex = barGrid(x, y)
-				IF sprIndex THEN PUT ((x + 2) * 8, (y + 2) * 8), frameIndex(44 * sprIndex)
-			NEXT
-		NEXT
-		IF setMode = "SPRITE BAR" THEN PUT ((tool.barx + 2) * 8, (tool.bary + 2) * 8), toolSpr(42)
-	END IF
-
-	IF sysApp = "MAPPING" THEN
-		LINE (176, 24)-(312, 160), 0, BF
-		FOR x = 22 TO 38
-			FOR y = 3 TO 19
-				sprIndex = gridMap(x + cam.x, y + cam.y)
-				IF sprIndex THEN PUT (x * 8, y * 8), frameIndex(44 * sprIndex) 
-			NEXT
-		NEXT
-		LOCATE 23, 30: COLOR modeColor: PRINT "x"; cam.x; "y"; cam.y
-		PUT (240, 88), toolSpr(tool.spr)
-	END IF
-
-	IF sysApp = "SPRITE" THEN
-		FOR x = 8 TO 15
-			FOR y = 16 TO 23
-				IF grid(x - 8, y - 16) THEN
-					LOCATE x, y: COLOR grid(x - 8, y - 16): PRINT CHR$(254)
-				ELSE
-					LOCATE x, y: COLOR gridColor: PRINT CHR$(254)
-				END IF
-			NEXT
-		NEXT
-		
-		FOR x = 0 TO 8
-			FOR y = 0 TO 8
-				PSET (x + 110, y + 80), grid(y, x)
-			NEXT
-		NEXT
-
-		FOR i = 1 TO 16
-			LOCATE 18, i + 12: COLOR colorPal(i): PRINT CHR$(254)
-		NEXT
-		
-		IF setMode = "DRAW" THEN LOCATE tool.x, tool.y: COLOR tool.clr: PRINT CHR$(254)
-	END IF
-	' DEBUG_
-	LOCATE 22, 28: COLOR consoleColor: PRINT tool.barx; tool.bary;
-	
-END SUB
-
-SUB userInput
-
-	IF sysApp = "GAME" THEN
-		scene(win.x + user.x, win.y + user.y) = user.ftile
-		SLEEP
-	END IF
-
-	k = INP(96)
-	SELECT CASE k
-	CASE 17
-	' move tool (W)
-		IF setMode = "PLAY" AND win.y > 0 THEN win.y = win.y - 1
-		IF setMode = "SPRITE BAR" AND tool.bary - 1 > 0 THEN tool.bary = tool.bary - 1	
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.y > 0 THEN cam.y = cam.y - 1
-		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND tool.x > 8 AND tool.x < 16 THEN tool.x = tool.x - 1
-		END IF
-
-	CASE 31
-	' move tool (S)
-		IF setMode = "PLAY" AND win.y < 70 THEN win.y = win.y + 1
-		IF setMode = "SPRITE BAR" AND tool.bary + 1 < 9 THEN tool.bary = tool.bary + 1
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.y < 80 THEN cam.y = cam.y + 1
-		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND tool.x > 7 AND tool.x < 15 THEN tool.x = tool.x + 1
-		END IF
-
-	CASE 30
-	' move tool (A)
-		IF setMode = "PLAY" AND win.x > 0 THEN win.x = win.x - 1
-		IF setMode = "SPRITE BAR" AND tool.barx - 1 > 0 THEN tool.barx = tool.barx - 1
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.x > 0 THEN cam.x = cam.x - 1
-		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND tool.y > 16 AND tool.y < 24 THEN tool.y = tool.y - 1
-			IF setMode = "PICK COLOR" AND tool.y > 12 AND tool.y < 29 THEN tool.y = tool.y - 1
-		END IF
-
-	CASE 32
-	' move tool (D)
-		IF setMode = "PLAY" AND win.x < 65 THEN win.x = win.x + 1
-		IF setMode = "SPRITE BAR" AND tool.barx + 1 < 9 THEN tool.barx = tool.barx + 1
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.x < 80 THEN cam.x = cam.x + 1
-		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND tool.y > 15 AND tool.y < 23 THEN tool.y = tool.y + 1
-			IF setMode = "PICK COLOR" AND tool.y > 11 AND tool.y < 28 THEN tool.y = tool.y + 1
-		END IF	
-	
-	CASE 41
-	' open console (~)
-		sysConsole
-
-	CASE 59
-	' spr mode (F1)
-		sysApp = "SPRITE"
-		setMode = "DRAW"
-		modeText = "MODE:SPRITE"
-		modeColor = 52
-		setToolPos
-		CLS
-
-	CASE 60
-	' map mode (F2)
-		sysApp = "MAPPING"
-		setMode = "MAP GRID"
-		modeText = "MODE:MAPPER"
-		modeColor = 39
-		setToolPos
-		CLS
-		
-	CASE 61
-	' game mode (F3)
-		sysApp = "GAME"
-		setMode = "PLAY"
-		modeText = "MODE:GAME"
-		modeColor = 41
-		initGame
-		CLS
-		
-	CASE 15
-	' pos tool to sprite bar (TAB)
-		setMode = "SPRITE BAR"
-		setToolPos
-
-	CASE 82
-	' pos tool to pick a color in spr mode (INS)
-		IF sysApp = "SPRITE" THEN setMode = "PICK COLOR"
-		setToolPos
-
-	CASE 73
-	' pos tool for map and draw mode, depends on app state (PAGE UP)
-		IF sysApp = "SPRITE" THEN setMode = "DRAW"
-		IF sysApp = "MAPPING" THEN setMode = "MAP GRID"
-		setToolPos
-		
-	CASE 81
-	' store current spr on draw grid on screen (PAGE DOWN)
-		IF sysApp = "SPRITE" AND setMode = "SPRITE BAR" THEN sysTask = "PLACE"
-		handleSprite
-	
-	CASE 79
-	' rem pixel on tool pos (END)
-		sysTask = "DEL PIXEL"
-		handleSprite
-
-	CASE 71
-	' pick/place objs in editor (HOME)
-		IF sysApp = "MAPPING" AND setMode = "SPRITE BAR" THEN tool.picked = sideBarIndex(tool.barx, tool.bary)
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" THEN gridMap(cam.x + tool.x, cam.y + tool.y) = tool.picked		
-		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" THEN grid(tool.x - 8, tool.y - 16) = tool.clr
-			IF setMode = "PICK COLOR" THEN
-				FOR y = 13 TO 29
-					IF tool.x = 18 AND tool.y = y THEN tool.clr = colorPal(y - 12)
-				NEXT
-			END IF
-		END IF
-	END SELECT	
-	IF sysApp = "GAME" THEN
-		user.ftile = scene(win.x + user.x, win.y + user.y)
-		scene(win.x + user.x, win.y + user.y) = user.spr
-	END IF
 
 END SUB
 
@@ -764,3 +567,201 @@ skipAi:
 END IF
 
 END SUB
+
+SUB updScreen
+
+	COLOR modeColor
+	LINE (0, 0)-(320, 16), modeColor, BF
+	LOCATE 2, 2: PRINT "FILE:"; UCASE$(filen)
+	LOCATE 2, 29: PRINT modeText
+	WAIT &H3DA, 8
+	
+	IF sysApp = "GAME" THEN
+		LINE (248, 24)-(80, 176), 0, BF
+		FOR x = 10 TO 30
+			FOR y = 3 TO 21
+				sprIndex = scene(x + win.x, y + win.y)
+				IF sprIndex THEN PUT (x * 8, y * 8), frameIndex(sprIndex)
+			NEXT
+		NEXT
+		PUT (160, 96), frameIndex(user.spr)
+		
+		' debug
+		LOCATE 17: COLOR 39: PRINT "energy:"; actor(1).energy
+		LOCATE 18: COLOR 44: PRINT "hp:"; actor(1).hp
+		LOCATE 19: COLOR 8: PRINT "target:"; actor(1).target
+		LOCATE 20: COLOR 48: PRINT "state:"; actor(1).state
+	ELSE
+		LINE (24, 24)-(88, 88), 0, BF
+		FOR x = 1 TO 8
+			FOR y = 1 TO 8
+				sprIndex = barGrid(x, y)
+				IF sprIndex THEN PUT ((x + 2) * 8, (y + 2) * 8), frameIndex(44 * sprIndex)
+			NEXT
+		NEXT
+		IF setMode = "SPRITE BAR" THEN PUT ((tool.barx + 2) * 8, (tool.bary + 2) * 8), toolSpr(42)
+	END IF
+
+	IF sysApp = "MAPPING" THEN
+		LINE (176, 24)-(312, 160), 0, BF
+		FOR x = 22 TO 38
+			FOR y = 3 TO 19
+				sprIndex = gridMap(x + cam.x, y + cam.y)
+				IF sprIndex THEN PUT (x * 8, y * 8), frameIndex(44 * sprIndex)
+			NEXT
+		NEXT
+		LOCATE 23, 30: COLOR modeColor: PRINT "x"; cam.x; "y"; cam.y
+		PUT (240, 88), toolSpr(tool.spr)
+	END IF
+
+	IF sysApp = "SPRITE" THEN
+		FOR x = 8 TO 15
+			FOR y = 16 TO 23
+				IF grid(x - 8, y - 16) THEN
+					LOCATE x, y: COLOR grid(x - 8, y - 16): PRINT CHR$(254)
+				ELSE
+					LOCATE x, y: COLOR gridColor: PRINT CHR$(254)
+				END IF
+			NEXT
+		NEXT
+		
+		FOR x = 0 TO 8
+			FOR y = 0 TO 8
+				PSET (x + 110, y + 80), grid(y, x)
+			NEXT
+		NEXT
+
+		FOR i = 1 TO 16
+			LOCATE 18, i + 12: COLOR colorPal(i): PRINT CHR$(254)
+		NEXT
+		
+		IF setMode = "DRAW" THEN LOCATE tool.x, tool.y: COLOR tool.clr: PRINT CHR$(254)
+	END IF
+	' DEBUG_
+	LOCATE 22, 28: COLOR consoleColor: PRINT tool.barx; tool.bary;
+	
+END SUB
+
+SUB userInput
+
+	IF sysApp = "GAME" THEN
+		scene(win.x + user.x, win.y + user.y) = user.ftile
+		SLEEP
+	END IF
+
+	k = INP(96)
+	SELECT CASE k
+	CASE 17
+	' move tool (W)
+		IF setMode = "PLAY" AND win.y > 0 THEN win.y = win.y - 1
+		IF setMode = "SPRITE BAR" AND tool.bary - 1 > 0 THEN tool.bary = tool.bary - 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.y > 0 THEN cam.y = cam.y - 1
+		IF sysApp = "SPRITE" THEN
+			IF setMode = "DRAW" AND tool.x > 8 AND tool.x < 16 THEN tool.x = tool.x - 1
+		END IF
+
+	CASE 31
+	' move tool (S)
+		IF setMode = "PLAY" AND win.y < 70 THEN win.y = win.y + 1
+		IF setMode = "SPRITE BAR" AND tool.bary + 1 < 9 THEN tool.bary = tool.bary + 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.y < 80 THEN cam.y = cam.y + 1
+		IF sysApp = "SPRITE" THEN
+			IF setMode = "DRAW" AND tool.x > 7 AND tool.x < 15 THEN tool.x = tool.x + 1
+		END IF
+
+	CASE 30
+	' move tool (A)
+		IF setMode = "PLAY" AND win.x > 0 THEN win.x = win.x - 1
+		IF setMode = "SPRITE BAR" AND tool.barx - 1 > 0 THEN tool.barx = tool.barx - 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.x > 0 THEN cam.x = cam.x - 1
+		IF sysApp = "SPRITE" THEN
+			IF setMode = "DRAW" AND tool.y > 16 AND tool.y < 24 THEN tool.y = tool.y - 1
+			IF setMode = "PICK COLOR" AND tool.y > 12 AND tool.y < 29 THEN tool.y = tool.y - 1
+		END IF
+
+	CASE 32
+	' move tool (D)
+		IF setMode = "PLAY" AND win.x < 65 THEN win.x = win.x + 1
+		IF setMode = "SPRITE BAR" AND tool.barx + 1 < 9 THEN tool.barx = tool.barx + 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.x < 80 THEN cam.x = cam.x + 1
+		IF sysApp = "SPRITE" THEN
+			IF setMode = "DRAW" AND tool.y > 15 AND tool.y < 23 THEN tool.y = tool.y + 1
+			IF setMode = "PICK COLOR" AND tool.y > 11 AND tool.y < 28 THEN tool.y = tool.y + 1
+		END IF
+	
+	CASE 41
+	' open console (~)
+		sysConsole
+
+	CASE 59
+	' spr mode (F1)
+		sysApp = "SPRITE"
+		setMode = "DRAW"
+		modeText = "MODE:SPRITE"
+		modeColor = 52
+		setToolPos
+		CLS
+
+	CASE 60
+	' map mode (F2)
+		sysApp = "MAPPING"
+		setMode = "MAP GRID"
+		modeText = "MODE:MAPPER"
+		modeColor = 39
+		setToolPos
+		CLS
+		
+	CASE 61
+	' game mode (F3)
+		sysApp = "GAME"
+		setMode = "PLAY"
+		modeText = "MODE:GAME"
+		modeColor = 46
+		CLS
+		
+	CASE 15
+	' pos tool to sprite bar (TAB)
+		setMode = "SPRITE BAR"
+		setToolPos
+
+	CASE 82
+	' pos tool to pick a color in spr mode (INS)
+		IF sysApp = "SPRITE" THEN setMode = "PICK COLOR"
+		setToolPos
+
+	CASE 73
+	' pos tool for map and draw mode, depends on app state (PAGE UP)
+		IF sysApp = "SPRITE" THEN setMode = "DRAW"
+		IF sysApp = "MAPPING" THEN setMode = "MAP GRID"
+		setToolPos
+		
+	CASE 81
+	' store current spr on draw grid on screen (PAGE DOWN)
+		IF sysApp = "SPRITE" AND setMode = "SPRITE BAR" THEN sysTask = "PLACE"
+		handleSprite
+	
+	CASE 79
+	' rem pixel on tool pos (END)
+		sysTask = "DEL PIXEL"
+		handleSprite
+
+	CASE 71
+	' pick/place objs in editor (HOME)
+		IF sysApp = "MAPPING" AND setMode = "SPRITE BAR" THEN tool.picked = sideBarIndex(tool.barx, tool.bary)
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" THEN gridMap(cam.x + tool.x, cam.y + tool.y) = tool.picked
+		IF sysApp = "SPRITE" THEN
+			IF setMode = "DRAW" THEN grid(tool.x - 8, tool.y - 16) = tool.clr
+			IF setMode = "PICK COLOR" THEN
+				FOR y = 13 TO 29
+					IF tool.x = 18 AND tool.y = y THEN tool.clr = colorPal(y - 12)
+				NEXT
+			END IF
+		END IF
+	END SELECT
+	IF sysApp = "GAME" THEN
+		user.ftile = scene(win.x + user.x, win.y + user.y)
+		scene(win.x + user.x, win.y + user.y) = user.spr
+	END IF
+
+END SUB
+
