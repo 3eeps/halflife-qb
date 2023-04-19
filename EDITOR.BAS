@@ -29,7 +29,7 @@ DIM SHARED gSize
 DIM SHARED gmSize
 DIM SHARED gridColor
 
-DIM SHARED frameIndex(2850)
+DIM SHARED frameIndex(3200)
 DIM SHARED filen AS STRING
 DIM SHARED src(8, 8)
 
@@ -119,6 +119,8 @@ SUB handleFile
 			NEXT
 			CLOSE #1
 			filen = ""
+
+		' *** need to save/load barGrid data to have sprites drawn on updScreen
 
 		CASE "LOAD PAK"
 			LOCATE 23, 2: INPUT "LOAD PAK: ", filen
