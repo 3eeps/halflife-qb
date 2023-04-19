@@ -6,6 +6,7 @@ DECLARE SUB handleFile ()
 DECLARE SUB updScreen ()
 DECLARE SUB initEditor ()
 DECLARE SUB setToolPos ()
+DECLARE SUB updActors ()
 RANDOMIZE TIMER
 ON ERROR GOTO BADFILE:
 
@@ -17,13 +18,32 @@ TYPE obj
 	picked AS INTEGER
 	clr AS INTEGER
 	spr AS INTEGER
+	hp AS INTEGER
+	direction AS INTEGER
+	steps AS INTEGER
+	energy AS INTEGER
+	state AS STRING * 4
+	target AS INTEGER
+	ftile AS INTEGER
 END TYPE
+
+DIM SHARED win AS obj
+DIM SHARED user AS obj
+DIM SHARED actor(32) AS obj
+DIM SHARED vdistObjList(3) AS obj
+
+DIM SHARED maxTarget
+DIM SHARED minDist
+DIM SHARED targetType
+DIM SHARED vdist
+DIM SHARED maxAi
 
 DIM SHARED tool AS obj
 DIM SHARED cam  AS obj
 
 DIM SHARED grid(8, 8)
 DIM SHARED gridMap(100, 100)
+DIM SHARED scene(100, 100)
 
 DIM SHARED gSize
 DIM SHARED gmSize
@@ -57,6 +77,7 @@ BADFILE:
 	filen = ""
 DO
 	userInput
+	updActors
 	updScreen
 	SLEEP
 LOOP UNTIL exitApp = 1
@@ -236,6 +257,16 @@ SUB initEditor
 	cam.y = 11
 	SprNum = 64
 	
+	maxTarget = 4
+	minDist = 10000
+	maxAi = 1
+	vdist = 5
+	user.x = 20
+	user.y = 12
+	user.spr = 44 * 1
+	win.x = 30 - user.x
+	win.y = 49 - user.y
+	
 	FOR x = 1 TO 8
 		FOR y = 1 TO 8
 			index = index + 1
@@ -261,7 +292,26 @@ SUB initEditor
 	NEXT
 	GET (0, 0)-(8, 8), toolSpr(42)
 	ERASE src
-	CLS
+		
+	FOR i = 1 TO maxAi
+		actor(i).x = 30
+		actor(i).y = 45
+		actor(i).hp = 35
+		actor(i).state = "wand"
+		actor(i).energy = 45
+		actor(i).target = -1
+		actor(i).steps = 0
+		actor(i).direction = RND * 4
+		actor(i).spr = 44 * 1
+		actor(i).ftile = scene(actor(i).x, actor(i).y)
+		scene(actor(i).x, actor(i).y) = actor(i).spr
+	NEXT	
+		
+	FOR x = 0 TO 100
+		FOR y = 0 TO 100
+			scene(x, y) = gridMap(x, y)
+		NEXT
+	NEXT
 	updScreen
 
 END SUB
@@ -379,22 +429,40 @@ SUB updScreen
 	LINE (0, 0)-(320, 16), modeColor, BF
 	LOCATE 2, 2: PRINT "FILE:"; UCASE$(filen)
 	LOCATE 2, 29: PRINT modeText
-
-	LINE (24, 24)-(88, 88), 0, BF
-	FOR x = 1 TO 8
-		FOR y = 1 TO 8
-			index = barGrid(x, y)
-			IF index THEN PUT ((x + 2) * 8, (y + 2) * 8), frameIndex(44 * index)
+	WAIT &H3DA, 8
+	
+	IF sysApp = "GAME" THEN
+		LINE (248, 24)-(80, 176), 0, BF
+		FOR x = 10 TO 30
+			FOR y = 3 TO 21
+				sprIndex = scene(x + win.x, y + win.y)
+				IF sprIndex THEN PUT (x * 8, y * 8), frameIndex(sprIndex)
+			NEXT
 		NEXT
-	NEXT
-	IF setMode = "SPRITE BAR" THEN PUT ((tool.barx + 2) * 8, (tool.bary + 2) * 8), toolSpr(42)
+		PUT (160, 96), frameIndex(user.spr)
+		
+		' debug
+		LOCATE 17: COLOR 39: PRINT "energy:"; actor(1).energy
+		LOCATE 18: COLOR 44: PRINT "hp:"; actor(1).hp
+		LOCATE 19: COLOR 8: PRINT "target:"; actor(1).target
+		LOCATE 20: COLOR 48: PRINT "state:"; actor(1).state	
+	ELSE
+		LINE (24, 24)-(88, 88), 0, BF
+		FOR x = 1 TO 8
+			FOR y = 1 TO 8
+				sprIndex = barGrid(x, y)
+				IF sprIndex THEN PUT ((x + 2) * 8, (y + 2) * 8), frameIndex(44 * sprIndex)
+			NEXT
+		NEXT
+		IF setMode = "SPRITE BAR" THEN PUT ((tool.barx + 2) * 8, (tool.bary + 2) * 8), toolSpr(42)
+	END IF
 
 	IF sysApp = "MAPPING" THEN
 		LINE (176, 24)-(312, 160), 0, BF
 		FOR x = 22 TO 38
 			FOR y = 3 TO 19
-				sprType = gridMap(x + cam.x, y + cam.y)
-				IF sprType THEN PUT (x * 8, y * 8), frameIndex(44 * sprType) 
+				sprIndex = gridMap(x + cam.x, y + cam.y)
+				IF sprIndex THEN PUT (x * 8, y * 8), frameIndex(44 * sprIndex) 
 			NEXT
 		NEXT
 		LOCATE 23, 30: COLOR modeColor: PRINT "x"; cam.x; "y"; cam.y
@@ -431,6 +499,11 @@ END SUB
 
 SUB userInput
 
+	IF sysApp = "GAME" THEN
+		scene(win.x + user.x, win.y + user.y) = user.ftile
+		SLEEP
+	END IF
+
 	k = INP(96)
 	SELECT CASE k
 	CASE 41
@@ -453,6 +526,15 @@ SUB userInput
 		modeText = "MODE:MAPPER"
 		modeColor = 39
 		setToolPos
+		CLS
+		
+	CASE 61
+	' game mode (F3)
+		sysApp = "GAME"
+		setMode = "PLAY"
+		modeText = "MODE:GAME"
+		modeColor = 41
+		initGame
 		CLS
 		
 	CASE 15
@@ -483,6 +565,7 @@ SUB userInput
 
 	CASE 17
 	' move tool (W)
+		IF setMode = "PLAY" AND win.y > 0 THEN win.y = win.y - 1
 		IF setMode = "SPRITE BAR" AND tool.bary - 1 > 0 THEN tool.bary = tool.bary - 1	
 		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.y > 0 THEN cam.y = cam.y - 1
 		IF sysApp = "SPRITE" THEN
@@ -491,6 +574,7 @@ SUB userInput
 
 	CASE 31
 	' move tool (S)
+		IF setMode = "PLAY" AND win.y < 70 THEN win.y = win.y + 1
 		IF setMode = "SPRITE BAR" AND tool.bary + 1 < 9 THEN tool.bary = tool.bary + 1
 		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.y < 80 THEN cam.y = cam.y + 1
 		IF sysApp = "SPRITE" THEN
@@ -499,6 +583,7 @@ SUB userInput
 
 	CASE 30
 	' move tool (A)
+		IF setMode = "PLAY" AND win.x > 0 THEN win.x = win.x - 1
 		IF setMode = "SPRITE BAR" AND tool.barx - 1 > 0 THEN tool.barx = tool.barx - 1
 		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.x > 0 THEN cam.x = cam.x - 1
 		IF sysApp = "SPRITE" THEN
@@ -508,6 +593,7 @@ SUB userInput
 
 	CASE 32
 	' move tool (D)
+		IF setMode = "PLAY" AND win.x < 65 THEN win.x = win.x + 1
 		IF setMode = "SPRITE BAR" AND tool.barx + 1 < 9 THEN tool.barx = tool.barx + 1
 		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.x < 80 THEN cam.x = cam.x + 1
 		IF sysApp = "SPRITE" THEN
@@ -527,7 +613,155 @@ SUB userInput
 				NEXT
 			END IF
 		END IF
-	END SELECT
+	END SELECT	
+	IF sysApp = "GAME" THEN
+		user.ftile = scene(win.x + user.x, win.y + user.y)
+		scene(win.x + user.x, win.y + user.y) = user.spr
+	END IF
 
 END SUB
 
+SUB updActors
+
+	IF sysApp = "GAME" THEN
+
+	FOR i = 1 TO maxAi
+	
+		IF actor(i).hp <= 0 THEN
+			actor(i).state = "dead"
+			GOTO skipAi
+		END IF
+
+		scene(actor(i).x, actor(i).y) = actor(i).ftile
+		currPosx = actor(i).x
+		currPosy = actor(i).x
+	
+		actor(i).energy = actor(i).energy - RND * 2
+		IF actor(i).energy < 1 THEN actor(i).hp = actor(i).hp - RND * 2
+
+		IF actor(i).energy < 25 THEN
+		actor(i).target = 420
+		actor(i).state = "find"
+		ELSE
+		actor(i).state = "wand"
+		END IF
+				 
+		IF actor(i).target = -1 THEN actor(i).state = "wand"
+	
+		SELECT CASE actor(i).state
+
+			CASE "wand"
+		
+				IF actor(i).direction = 0 THEN
+					dx = 1: dy = 0
+				ELSEIF actor(i).direction = 1 THEN
+					dx = -1: dy = 0
+				ELSEIF actor(i).direction = 2 THEN
+					dx = 0: dy = -1
+				ELSEIF actor(i).direction = 3 THEN
+					dx = 0: dy = 1
+				END IF
+				newx = actor(i).x + dx
+				newy = actor(i).y + dy
+		
+				IF scene(newx, newy) = 0 AND actor(i).steps < 4 THEN
+					actor(i).x = newx
+					actor(i).y = newy
+					actor(i).steps = actor(i).steps + 1
+				ELSE
+					actor(i).steps = 0
+					rand = RND * 4
+					actor(i).direction = rand
+				END IF
+
+			CASE "find"
+			
+				FOR x = actor(i).x - vdist TO actor(i).x + vdist
+					FOR y = actor(i).y - vdist TO actor(i).y + vdist
+						IF scene(x, y) = actor(i).target THEN
+							dx = actor(i).x - x
+							dy = actor(i).y - y
+							IF targetCount < maxTarget THEN
+								targetCount = targetCount + 1
+								vdistObjList(targetCount).x = dx
+								vdistObjList(targetCount).y = dy
+							END IF
+						END IF
+					NEXT
+				NEXT
+	
+				IF targetCount > 0 THEN
+					FOR j = 1 TO targetCount
+						dx = vdistObjList(j).x - actor(i).x
+						dy = vdistObjList(j).y - actor(i).y
+						distSqr = dx ^ 2 + dy ^ 2
+						IF distSqr < minDist ^ 2 THEN
+							closestTarget = j
+							minDist = SQR(distSqr)
+						END IF
+					NEXT
+					dx = vdistObjList(closestTarget).x
+					dy = vdistObjList(closestTarget).y
+					ERASE vdistObjList
+				END IF
+			
+				IF dx < 0 AND dy < 0 THEN
+					rand = RND * 2
+					IF rand = 1 THEN
+						actor(i).x = actor(i).x + 1
+					ELSE
+						actor(i).y = actor(i).y + 1
+					END IF
+				ELSEIF dx > 0 AND dy > 0 THEN
+					rand = RND * 2
+					IF rand = 1 THEN
+						actor(i).x = actor(i).x - 1
+					ELSE
+						actor(i).y = actor(i).y - 1
+					END IF
+				ELSEIF dx < 0 AND dy > 0 THEN
+					rand = RND * 2
+					IF rand = 1 THEN
+						actor(i).x = actor(i).x + 1
+					ELSE
+						actor(i).y = actor(i).y - 1
+					END IF
+				ELSEIF dx > 0 AND dy < 0 THEN
+					rand = RND * 2
+					IF rand = 1 THEN
+						actor(i).x = actor(i).x - 1
+					ELSE
+						actor(i).y = actor(i).y + 1
+					END IF
+				ELSEIF dx = 0 AND dy < 0 THEN actor(i).y = actor(i).y + 1
+				ELSEIF dx = 0 AND dy > 0 THEN actor(i).y = actor(i).y - 1
+				ELSEIF dx < 0 AND dy = 0 THEN actor(i).x = actor(i).x + 1
+				ELSEIF dx > 0 AND dy = 0 THEN actor(i).x = actor(i).x - 1
+				END IF
+			
+				IF scene(actor(i).x + 1, actor(i).y) = actor(i).target THEN
+					foundTarget = 1
+				ELSEIF scene(actor(i).x - 1, actor(i).y) = actor(i).target THEN
+					foundTarget = 1
+				ELSEIF scene(actor(i).x, actor(i).y + 1) = actor(i).target THEN
+					foundTarget = 1
+				ELSEIF scene(actor(i).x, actor(i).y - 1) = actor(i).target THEN
+					foundTarget = 1
+				END IF
+		
+				IF foundTarget THEN
+					actor(i).x = currPosx
+					actor(i).x = currPosy
+					actor(i).target = -1
+					scene(actor(i).x, actor(i).y) = 0
+					actor(i).energy = actor(i).energy + 25
+				END IF
+		END SELECT
+		actor(i).ftile = scene(actor(i).x, actor(i).y)
+		scene(actor(i).x, actor(i).y) = actor(i).spr
+	
+skipAi:
+	NEXT
+END IF
+
+END SUB
