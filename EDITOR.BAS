@@ -14,14 +14,8 @@ ON ERROR GOTO BADFILE:
 TYPE obj
 	x AS INTEGER
 	y AS INTEGER
-' drawx AS INTEGER
-' drawy AS INTEGER
-' pickx AS INTEGER
-' picky AS INTEGER
 	barx AS INTEGER
 	bary AS INTEGER
-' collide AS INTEGER
-' sprName AS STRING * 8
 	picked AS INTEGER
 	clr AS INTEGER
 	spr AS INTEGER
@@ -38,7 +32,6 @@ DIM SHARED gSize
 DIM SHARED gmSize
 DIM SHARED gridColor
 
-DIM SHARED sprIndex(2850)
 DIM SHARED frameIndex(2850)
 DIM SHARED filen AS STRING
 DIM SHARED src(8, 8)
@@ -127,7 +120,7 @@ SUB handleFile
 			OPEN filen FOR INPUT AS #1
 			fileLen = (SprNum * 44)
 			FOR i = 1 TO fileLen
-				INPUT #1, sprIndex(i)
+				INPUT #1, frameIndex(i)
 			NEXT
 			CLOSE #1
 			pakName = filen
@@ -450,20 +443,20 @@ SUB updScreen
 	LOCATE 2, 2: PRINT "FILE:"; UCASE$(filen)
 	LOCATE 2, 29: PRINT modeText
 
-	IF sysApp = "MAPPING" THEN
-		LINE (24, 24)-(88, 88), 0, BF
-		FOR x = 1 TO 8
-			FOR y = 1 TO 8
-				index = barGrid(x, y)
-				IF index THEN PUT ((x + 2) * 8, (y + 2) * 8), frameIndex(44 * index)
-			NEXT
+	LINE (24, 24)-(88, 88), 0, BF
+	FOR x = 1 TO 8
+		FOR y = 1 TO 8
+			index = barGrid(x, y)
+			IF index THEN PUT ((x + 2) * 8, (y + 2) * 8), frameIndex(44 * index)
 		NEXT
-	
+	NEXT
+
+	IF sysApp = "MAPPING" THEN
 		LINE (176, 24)-(312, 160), 0, BF
 		FOR x = 22 TO 38
 			FOR y = 3 TO 19
 				sprType = gridMap(x + cam.x, y + cam.y)
-				IF sprType THEN PUT (x * 8, y * 8), sprIndex(sprType)
+				IF sprType THEN PUT (x * 8, y * 8), toolSpr(42) 'frameIndex(sprType)
 			NEXT
 		NEXT
 		LOCATE 23, 30: COLOR modeColor: PRINT "x"; cam.x; "y"; cam.y
@@ -471,16 +464,6 @@ SUB updScreen
 	END IF
 
 	IF sysApp = "SPRITE" THEN
-		IF setMode = "SPRITE BAR" THEN
-			LINE (24, 24)-(88, 88), 0, BF
-			FOR x = 1 TO 8
-				FOR y = 1 TO 8
-					index = barGrid(x, y)
-					IF index THEN PUT ((x + 2) * 8, (y + 2) * 8), frameIndex(44 * index)
-				NEXT
-			NEXT
-		END IF
-	
 		FOR x = 8 TO 15
 			FOR y = 16 TO 23
 				IF grid(x - 8, y - 16) THEN
