@@ -506,6 +506,44 @@ SUB userInput
 
 	k = INP(96)
 	SELECT CASE k
+	CASE 17
+	' move tool (W)
+		IF setMode = "PLAY" AND win.y > 0 THEN win.y = win.y - 1
+		IF setMode = "SPRITE BAR" AND tool.bary - 1 > 0 THEN tool.bary = tool.bary - 1	
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.y > 0 THEN cam.y = cam.y - 1
+		IF sysApp = "SPRITE" THEN
+			IF setMode = "DRAW" AND tool.x > 8 AND tool.x < 16 THEN tool.x = tool.x - 1
+		END IF
+
+	CASE 31
+	' move tool (S)
+		IF setMode = "PLAY" AND win.y < 70 THEN win.y = win.y + 1
+		IF setMode = "SPRITE BAR" AND tool.bary + 1 < 9 THEN tool.bary = tool.bary + 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.y < 80 THEN cam.y = cam.y + 1
+		IF sysApp = "SPRITE" THEN
+			IF setMode = "DRAW" AND tool.x > 7 AND tool.x < 15 THEN tool.x = tool.x + 1
+		END IF
+
+	CASE 30
+	' move tool (A)
+		IF setMode = "PLAY" AND win.x > 0 THEN win.x = win.x - 1
+		IF setMode = "SPRITE BAR" AND tool.barx - 1 > 0 THEN tool.barx = tool.barx - 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.x > 0 THEN cam.x = cam.x - 1
+		IF sysApp = "SPRITE" THEN
+			IF setMode = "DRAW" AND tool.y > 16 AND tool.y < 24 THEN tool.y = tool.y - 1
+			IF setMode = "PICK COLOR" AND tool.y > 12 AND tool.y < 29 THEN tool.y = tool.y - 1
+		END IF
+
+	CASE 32
+	' move tool (D)
+		IF setMode = "PLAY" AND win.x < 65 THEN win.x = win.x + 1
+		IF setMode = "SPRITE BAR" AND tool.barx + 1 < 9 THEN tool.barx = tool.barx + 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.x < 80 THEN cam.x = cam.x + 1
+		IF sysApp = "SPRITE" THEN
+			IF setMode = "DRAW" AND tool.y > 15 AND tool.y < 23 THEN tool.y = tool.y + 1
+			IF setMode = "PICK COLOR" AND tool.y > 11 AND tool.y < 28 THEN tool.y = tool.y + 1
+		END IF	
+	
 	CASE 41
 	' open console (~)
 		sysConsole
@@ -563,44 +601,6 @@ SUB userInput
 		sysTask = "DEL PIXEL"
 		handleSprite
 
-	CASE 17
-	' move tool (W)
-		IF setMode = "PLAY" AND win.y > 0 THEN win.y = win.y - 1
-		IF setMode = "SPRITE BAR" AND tool.bary - 1 > 0 THEN tool.bary = tool.bary - 1	
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.y > 0 THEN cam.y = cam.y - 1
-		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND tool.x > 8 AND tool.x < 16 THEN tool.x = tool.x - 1
-		END IF
-
-	CASE 31
-	' move tool (S)
-		IF setMode = "PLAY" AND win.y < 70 THEN win.y = win.y + 1
-		IF setMode = "SPRITE BAR" AND tool.bary + 1 < 9 THEN tool.bary = tool.bary + 1
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.y < 80 THEN cam.y = cam.y + 1
-		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND tool.x > 7 AND tool.x < 15 THEN tool.x = tool.x + 1
-		END IF
-
-	CASE 30
-	' move tool (A)
-		IF setMode = "PLAY" AND win.x > 0 THEN win.x = win.x - 1
-		IF setMode = "SPRITE BAR" AND tool.barx - 1 > 0 THEN tool.barx = tool.barx - 1
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.x > 0 THEN cam.x = cam.x - 1
-		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND tool.y > 16 AND tool.y < 24 THEN tool.y = tool.y - 1
-			IF setMode = "PICK COLOR" AND tool.y > 12 AND tool.y < 29 THEN tool.y = tool.y - 1
-		END IF
-
-	CASE 32
-	' move tool (D)
-		IF setMode = "PLAY" AND win.x < 65 THEN win.x = win.x + 1
-		IF setMode = "SPRITE BAR" AND tool.barx + 1 < 9 THEN tool.barx = tool.barx + 1
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.x < 80 THEN cam.x = cam.x + 1
-		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND tool.y > 15 AND tool.y < 23 THEN tool.y = tool.y + 1
-			IF setMode = "PICK COLOR" AND tool.y > 11 AND tool.y < 28 THEN tool.y = tool.y + 1
-		END IF
-											 
 	CASE 71
 	' pick/place objs in editor (HOME)
 		IF sysApp = "MAPPING" AND setMode = "SPRITE BAR" THEN tool.picked = sideBarIndex(tool.barx, tool.bary)
@@ -624,7 +624,6 @@ END SUB
 SUB updActors
 
 	IF sysApp = "GAME" THEN
-
 	FOR i = 1 TO maxAi
 	
 		IF actor(i).hp <= 0 THEN
