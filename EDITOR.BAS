@@ -31,6 +31,8 @@ DIM SHARED win AS obj
 DIM SHARED user AS obj
 DIM SHARED actor(32) AS obj
 DIM SHARED vdistObjList(3) AS obj
+DIM SHARED tool AS obj
+DIM SHARED cam  AS obj
 
 DIM SHARED maxTarget
 DIM SHARED minDist
@@ -38,21 +40,19 @@ DIM SHARED targetType
 DIM SHARED vdist
 DIM SHARED maxAi
 
-DIM SHARED tool AS obj
-DIM SHARED cam  AS obj
-
 DIM SHARED grid(8, 8)
 DIM SHARED gridMap(100, 100)
 DIM SHARED scene(100, 100)
-
 DIM SHARED gSize
 DIM SHARED gmSize
+
 DIM SHARED gridColor
+DIM SHARED consoleColor
+DIM SHARED modeColor
 
 DIM SHARED frameIndex(3200)
-DIM SHARED filen AS STRING
+DIM SHARED colorPal(16)
 DIM SHARED src(8, 8)
-
 DIM SHARED toolSpr(84)
 DIM SHARED barGrid(8, 8)
 DIM SHARED sideBarIndex(8, 8)
@@ -62,14 +62,11 @@ DIM SHARED sysTask AS STRING
 DIM SHARED sysApp AS STRING
 DIM SHARED setMode AS STRING
 DIM SHARED modeText AS STRING
-DIM SHARED consoleColor
-DIM SHARED modeColor
+DIM SHARED exitApp
 
+DIM SHARED filen AS STRING
 DIM SHARED SprNum
 DIM SHARED pakName AS STRING
-
-DIM SHARED colorPal(16)
-DIM SHARED exitApp
 
 initEditor
 BADFILE:
