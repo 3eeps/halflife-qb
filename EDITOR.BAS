@@ -117,10 +117,14 @@ SUB handleFile
 			FOR i = 1 TO fileLen
 				PRINT #1, frameIndex(i)
 			NEXT
+			
+			FOR x = 1 TO 8
+				FOR y = 1 to 8
+					PRINT #1, barGrid(x, y)
+				NEXT
+			NEXT			
 			CLOSE #1
 			filen = ""
-
-		' *** need to save/load barGrid data to have sprites drawn on updScreen
 
 		CASE "LOAD PAK"
 			LOCATE 23, 2: INPUT "LOAD PAK: ", filen
@@ -129,6 +133,12 @@ SUB handleFile
 			FOR i = 1 TO fileLen
 				INPUT #1, frameIndex(i)
 			NEXT
+			
+			FOR x = 1 TO 8
+				FOR y = 1 to 8
+					INPUT #1, barGrid(x, y)
+				NEXT
+			NEXT		
 			CLOSE #1
 			pakName = filen
 			filen = ""
