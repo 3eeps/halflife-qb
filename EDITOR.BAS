@@ -234,17 +234,16 @@ SUB handleGame
 		actor(i).direction = RND * 4
 		actor(i).spr = 44 * 1
 		actor(i).ftile = gridMap(actor(i).x, actor(i).y)
-		gridMap(actor(i).x, actor(i).y) = actor(i).spr
-		
-		FOR x = 0 TO gmSize
-			FOR y = 0 TO gmSize
-				index = gridMap(x, y)
-				index = index * 44
-				gridMap(x, y) = index
-			NEXT
-		NEXT
-		
+		gridMap(actor(i).x, actor(i).y) = actor(i).spr				
 	NEXT
+	
+	'FOR x = 0 TO gmSize
+	'	FOR y = 0 TO gmSize
+	'		index = gridMap(x, y)
+	'		index = index * 44
+	'		gridMap(x, y) = index
+	'	NEXT
+	' NEXT
 	
 END SUB
 
@@ -259,8 +258,7 @@ SUB handleSprite
 		CASE "PLACE"
 			index = sideBarIndex(tool.barx, tool.bary)
 			barGrid(tool.barx, tool.bary) = index
-			GET (110, 80)-(118, 88), frameIndex(44 * index)
-			
+			GET (110, 80)-(118, 88), frameIndex(44 * index)			
 	END SELECT
 	sysTask = ""
 
@@ -588,7 +586,7 @@ SUB updScreen
 		FOR x = 22 TO 38
 			FOR y = 3 TO 19
 				sprIndex = gridMap(x + win.x, y + win.y)
-				IF sprIndex THEN PUT (x * 8, y * 8), frameIndex(sprIndex)
+				IF sprIndex THEN PUT (x * 8, y * 8), frameIndex(44 * sprIndex)
 			NEXT
 		NEXT
 		LOCATE 23, 30: COLOR modeColor: PRINT "x"; win.x; "y"; win.y
@@ -645,6 +643,7 @@ SUB updScreen
 				
 		IF setMode = "DRAW" THEN LOCATE tool.x, tool.y: COLOR tool.clr: PRINT CHR$(254)
 		IF setMode = "PICK COLOR" THEN LOCATE tool.x, tool.y: COLOR consoleColor: PRINT CHR$(248)
+	END IF
 	
 END SUB
 
