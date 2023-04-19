@@ -53,7 +53,7 @@ DIM SHARED modeColor
 DIM SHARED frameIndex(3200)
 DIM SHARED colorPal(16)
 DIM SHARED src(8, 8)
-DIM SHARED toolSpr(44)
+DIM SHARED toolSpr(84)
 DIM SHARED barGrid(8, 8)
 DIM SHARED sideBarIndex(8, 8)
 
@@ -128,21 +128,19 @@ SUB handleFile
 			CLOSE #1
 			updScreen
 
-		CASE "SAVE PAK"
+		CASE "SAVE PAK"		
 			LOCATE 23, 2: INPUT "PAK NAME:", filen
 			OPEN filen FOR OUTPUT AS #1
 			fileLen = (SprNum * 44)
 			FOR i = 1 TO fileLen
 				PRINT #1, frameIndex(i)
 			NEXT
-			
-			'FOR x = 1 TO 8
-			' FOR y = 1 TO 8
-			'   sprPos = barGrid(x, y)
-			'   sprPos = sprPos * 44
-			'   PRINT #1, sprPos
-			' NEXT
-			'NEXT
+									
+			FOR x = 1 TO 8
+				FOR y = 1 TO 8
+					PRINT #1, barGrid(x, y)
+				NEXT
+			NEXT
 			CLOSE #1
 			filen = ""
 
@@ -232,18 +230,10 @@ SUB handleGame
 		actor(i).target = -1
 		actor(i).steps = 0
 		actor(i).direction = RND * 4
-		actor(i).spr = 44 * 1
+		actor(i).spr = 44 * 2
 		actor(i).ftile = gridMap(actor(i).x, actor(i).y)
 		gridMap(actor(i).x, actor(i).y) = actor(i).spr				
 	NEXT
-	
-	'FOR x = 0 TO gmSize
-	'	FOR y = 0 TO gmSize
-	'		index = gridMap(x, y)
-	'		index = index * 44
-	'		gridMap(x, y) = index
-	'	NEXT
-	' NEXT
 	
 END SUB
 
@@ -275,7 +265,7 @@ SUB initEditor
 	setToolPos
 	tool.spr = 42
 	tool.clr = modeColor
-	gridColor = 21
+	gridColor = 31
 	gmSize = 100
 	gSize = 7
 	cam.x = 30
