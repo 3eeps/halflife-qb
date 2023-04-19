@@ -53,7 +53,7 @@ DIM SHARED modeColor
 DIM SHARED frameIndex(3200)
 DIM SHARED colorPal(16)
 DIM SHARED src(8, 8)
-DIM SHARED toolSpr(84)
+DIM SHARED toolSpr(44)
 DIM SHARED barGrid(8, 8)
 DIM SHARED sideBarIndex(8, 8)
 
