@@ -578,7 +578,7 @@ SUB updScreen
 		FOR x = 10 TO 30
 			FOR y = 3 TO 21
 				sprIndex = scene(x + win.x, y + win.y)
-				IF sprIndex THEN PUT (x * 8, y * 8), frameIndex(sprIndex)
+				IF sprIndex THEN PUT (x * 8, y * 8), frameIndex(44 * sprIndex)
 			NEXT
 		NEXT
 		PUT (160, 96), frameIndex(user.spr)
@@ -713,7 +713,7 @@ SUB userInput
 		sysApp = "GAME"
 		setMode = "PLAY"
 		modeText = "MODE:GAME"
-		modeColor = 46
+		modeColor = 47
 		CLS
 		
 	CASE 15
