@@ -3,11 +3,9 @@ DECLARE SUB userInput ()
 DECLARE SUB handleSprite ()
 DECLARE SUB sysConsole ()
 DECLARE SUB handleFile ()
-DECLARE SUB handleMap ()
 DECLARE SUB updScreen ()
 DECLARE SUB initEditor ()
 DECLARE SUB setToolPos ()
-
 RANDOMIZE TIMER
 ON ERROR GOTO BADFILE:
 
@@ -23,7 +21,6 @@ END TYPE
 
 DIM SHARED tool AS obj
 DIM SHARED cam  AS obj
-DIM SHARED sprite AS obj
 
 DIM SHARED grid(8, 8)
 DIM SHARED gridMap(100, 100)
@@ -127,7 +124,6 @@ SUB handleFile
 			LOCATE 23, 2: INPUT "LOAD PAK: ", filen
 			OPEN filen FOR INPUT AS #1
 			fileLen = (SprNum * 44)
-			ERASE frameIndex
 			FOR i = 1 TO fileLen
 				INPUT #1, frameIndex(i)
 			NEXT
@@ -193,45 +189,6 @@ SUB handleFile
 
 END SUB
 
-SUB handleMap
-
-	COLOR consoleColor
-	WHILE INKEY$ <> "": WEND
-	SELECT CASE sysTask
-		CASE "REPL TILE"
-			LOCATE 23, 2: INPUT "REPLACE:", sprite0
-			LOCATE 23, 2: INPUT "WITH:", sprite1
-			FOR x = 0 TO gSize
-				FOR y = 0 TO gSize
-					IF gridMap(x + 20, y + 12) = sprite0 * 42 THEN gridMap(x + 20, y + 12) = sprite1 * 42
-				NEXT
-			NEXT
-
-		CASE "FILL"
-			LOCATE 23, 2: INPUT "COORDx:", coord0
-			LOCATE 23, 2: INPUT "COORDy:", coord1
-			LOCATE 23, 2: INPUT "FILL SPR#:", getSpr
-			FOR x = 0 TO coord0
-				FOR y = 0 TO coord1
-					gridMap(x + 20, y + 12) = getSpr * 42
-				NEXT
-			NEXT
-
-		CASE "RAND"
-			LOCATE 23, 2: INPUT "COORDx:", coord0
-			LOCATE 23, 2: INPUT "COORDy:", coord1
-			LOCATE 23, 2: INPUT "#1-255:", noise
-			LOCATE 23, 2: INPUT "SPR#:", getSpr
-			FOR x = 0 TO coord0
-				FOR y = 0 TO coord1
-					IF INT(RND * noise) + 1 = 1 THEN gridMap(x + 20, y + 12) = getSpr * 42
-				NEXT
-			NEXT
-	END SELECT
-	sysTask = ""
-
-END SUB
-
 SUB handleSprite
 
 	COLOR consoleColor
@@ -239,15 +196,6 @@ SUB handleSprite
 	SELECT CASE sysTask
 		CASE "DEL PIXEL"
 			grid(tool.x - 8, tool.y - 16) = 0
-
-		CASE "REPL PIXEL"
-			LOCATE 23, 2: INPUT "REPLACE:", color0
-			LOCATE 23, 2: INPUT "WITH:", color1
-			FOR x = 0 TO gSize
-				FOR y = 0 TO gSize
-					IF grid(x, y) = color0 THEN grid(x, y) = color1
-				NEXT
-			NEXT
 			
 		CASE "PLACE"
 			index = sideBarIndex(tool.barx, tool.bary)
@@ -337,15 +285,11 @@ SUB sysConsole
 	LOCATE 23, 2: INPUT ">>>: ", console
 	WHILE INKEY$ <> "": WEND
 	SELECT CASE console
-		CASE "mem"
-			LOCATE 23, 2: PRINT "USED:"; 354418 - FRE(-1); "/"; 354418
-			SLEEP
-
 		CASE "exit"
 			exitApp = 1
 
 		CASE "save pak"
-			IF sysApp = "SPRITE" THEN sysTask = "SAVE PAK"
+			sysTask = "SAVE PAK"
 			handleFile
 
 		CASE "new pal"
@@ -387,11 +331,7 @@ SUB sysConsole
 			handleFile
 
 		CASE "new"
-			IF sysApp = "MAPPING" THEN
-				sysTask = "NEW MAP"
-			ELSE
-				sysTask = "NEW GFX"
-			END IF
+			sysTask = "NEW"
 			handleFile
 
 		CASE "load"
@@ -409,23 +349,6 @@ SUB sysConsole
 				sysTask = "SAVE GFX"
 			END IF
 			handleFile
-
-		CASE "repl"
-			IF sysApp = "MAPPING" THEN
-				sysTask = "REPL TILE"
-				handleMap
-			ELSEIF sysApp = "SPRITE" THEN
-				sysTask = "REPL PIXEL"
-				handleSprite
-			END IF
-
-		CASE "add rnd"
-			IF sysApp = "MAPPING" THEN sysTask = "RANDOM"
-			handleMap
-
-		CASE "fill"
-			IF sysApp = "MAPPING" THEN sysTask = "FILL"
-			handleMap
 
 		CASE "dir"
 			FILES "\*.*"
@@ -452,6 +375,7 @@ SUB updScreen
 			IF index THEN PUT ((x + 2) * 8, (y + 2) * 8), frameIndex(44 * index)
 		NEXT
 	NEXT
+	IF setMode = "SPRITE BAR" THEN PUT ((tool.barx + 2) * 8, (tool.bary + 2) * 8), toolSpr(42)
 
 	IF sysApp = "MAPPING" THEN
 		LINE (176, 24)-(312, 160), 0, BF
@@ -489,7 +413,7 @@ SUB updScreen
 		IF setMode = "DRAW" THEN LOCATE tool.x, tool.y: COLOR tool.clr: PRINT CHR$(254)
 	END IF
 	' DEBUG_
-	LOCATE 22, 28: COLOR consoleColor: PRINT tool.barx; tool.bary; tool.picked'sideBarIndex(tool.barx, tool.bary)
+	LOCATE 22, 28: COLOR consoleColor: PRINT tool.barx; tool.bary;
 	
 END SUB
 
@@ -520,7 +444,7 @@ SUB userInput
 		CLS
 		
 	CASE 15
-	' (TAB)
+	' pos tool to sprite bar (TAB)
 		setMode = "SPRITE BAR"
 		setToolPos
 
