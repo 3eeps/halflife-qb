@@ -485,10 +485,9 @@ SUB updScreen
 		NEXT
 		
 		IF setMode = "DRAW" THEN LOCATE tool.x, tool.y: COLOR tool.clr: PRINT CHR$(254)
-		
-		' DEBUG_
-		LOCATE 23, 28: COLOR consoleColor: PRINT tool.barx; tool.bary; sideBarIndex(tool.barx, tool.bary)
 	END IF
+	' DEBUG_
+	LOCATE 22, 28: COLOR consoleColor: PRINT tool.barx; tool.bary; sideBarIndex(tool.barx, tool.bary)
 	
 END SUB
 
@@ -520,18 +519,21 @@ SUB userInput
 		
 	CASE 15
 	' (TAB)
-		IF sysApp = "SPRITE" THEN setMode = "SPRITE BAR"
+		setMode = "SPRITE BAR"
 		setToolPos
 
 	CASE 82
 	' pos tool to pick a color in spr mode (INS)
-		IF sysApp = "SPRITE" THEN setMode = "PICK COLOR"
+		setMode = "PICK COLOR"
 		setToolPos
 
 	CASE 73
 	' pos tool for map and draw mode, depends on app state (PAGE UP)
-		IF sysApp = "MAPPING" THEN setMode = "MAP GRID"
-		IF sysApp = "SPRITE" THEN setMode = "DRAW"
+		IF sysApp = "SPRITE" THEN 
+			setMode = "DRAW"
+		ELSE
+			setMode = "MAP GRID"
+		END IF
 		setToolPos
 		
 	CASE 81
@@ -540,42 +542,42 @@ SUB userInput
 		handleSprite
 	
 	CASE 79
-	' rem sprite/pixel on tool pos (END)
-		IF sysApp = "SPRITE" AND setMode = "DRAW" THEN sysTask = "DEL PIXEL"
+	' rem pixel on tool pos (END)
+		sysTask = "DEL PIXEL"
 		handleSprite
 
 	CASE 17
 	' move tool (W)
-		IF sysApp = "MAPPING" AND cam.y > 0 THEN cam.y = cam.y - 1
+		IF setMode = "SPRITE BAR" AND tool.bary - 1 > 0 THEN tool.bary = tool.bary - 1	
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.y > 0 THEN cam.y = cam.y - 1
 		IF sysApp = "SPRITE" THEN
 			IF setMode = "DRAW" AND tool.x > 8 AND tool.x < 16 THEN tool.x = tool.x - 1
-			IF setMode = "SPRITE BAR" AND tool.bary - 1 > 0 THEN tool.bary = tool.bary - 1
 		END IF
 
 	CASE 31
 	' move tool (S)
-		IF sysApp = "MAPPING" AND cam.y < 80 THEN cam.y = cam.y + 1
+		IF setMode = "SPRITE BAR" AND tool.bary + 1 < 9 THEN tool.bary = tool.bary + 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.y < 80 THEN cam.y = cam.y + 1
 		IF sysApp = "SPRITE" THEN
 			IF setMode = "DRAW" AND tool.x > 7 AND tool.x < 15 THEN tool.x = tool.x + 1
-			IF setMode = "SPRITE BAR" AND tool.bary + 1 < 9 THEN tool.bary = tool.bary + 1
 		END IF
 
 	CASE 30
 	' move tool (A)
-		IF sysApp = "MAPPING" AND cam.x > 0 THEN cam.x = cam.x - 1
+		IF setMode = "SPRITE BAR" AND tool.barx - 1 > 0 THEN tool.barx = tool.barx - 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.x > 0 THEN cam.x = cam.x - 1
 		IF sysApp = "SPRITE" THEN
 			IF setMode = "DRAW" AND tool.y > 16 AND tool.y < 24 THEN tool.y = tool.y - 1
 			IF setMode = "PICK COLOR" AND tool.y > 12 AND tool.y < 29 THEN tool.y = tool.y - 1
-			IF setMode = "SPRITE BAR" AND tool.barx - 1 > 0 THEN tool.barx = tool.barx - 1
 		END IF
 
 	CASE 32
 	' move tool (D)
-		IF sysApp = "MAPPING" AND cam.x < 80 THEN cam.x = cam.x + 1
+		IF setMode = "SPRITE BAR" AND tool.barx + 1 < 9 THEN tool.barx = tool.barx + 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.x < 80 THEN cam.x = cam.x + 1
 		IF sysApp = "SPRITE" THEN
 			IF setMode = "DRAW" AND tool.y > 15 AND tool.y < 23 THEN tool.y = tool.y + 1
 			IF setMode = "PICK COLOR" AND tool.y > 11 AND tool.y < 28 THEN tool.y = tool.y + 1
-			IF setMode = "SPRITE BAR" AND tool.barx + 1 < 9 THEN tool.barx = tool.barx + 1
 		END IF
 											 
 	CASE 71
