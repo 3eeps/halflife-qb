@@ -71,12 +71,20 @@ SUB handleFile
 	WHILE INKEY$ <> "": WEND
 	COLOR consoleColor
 	SELECT CASE sysTask
-		CASE "NEW GFX"
-			FOR x = 0 TO gSize
-				FOR y = 0 TO gSize
-					grid(x, y) = 0
+		CASE "NEW"
+			IF sysApp = "SPRITE" THEN
+				FOR x = 0 TO gSize
+					FOR y = 0 TO gSize
+						grid(x, y) = 0
+					NEXT
 				NEXT
-			NEXT
+			ELSE
+				FOR x = 0 TO gmSize
+					FOR y = 0 TO gmSize
+						gridMap(x, y) = 0
+					NEXT
+				NEXT
+			END IF
 			filen = ""
 
 		CASE "SAVE GFX"
@@ -119,6 +127,7 @@ SUB handleFile
 			LOCATE 23, 2: INPUT "LOAD PAK: ", filen
 			OPEN filen FOR INPUT AS #1
 			fileLen = (SprNum * 44)
+			ERASE frameIndex
 			FOR i = 1 TO fileLen
 				INPUT #1, frameIndex(i)
 			NEXT
@@ -154,13 +163,6 @@ SUB handleFile
 			NEXT
 			CLOSE #1
 			filen = ""
-
-		CASE "NEW MAP"
-			FOR x = 0 TO gmSize
-				FOR y = 0 TO gmSize
-					gridMap(x, y) = 0
-				NEXT
-			NEXT
 
 		CASE "SAVE MAP"
 			LOCATE 23, 2: INPUT "MAP NAME: ", filen
@@ -310,18 +312,18 @@ SUB setToolPos
 		CASE "DRAW"
 			tool.x = 8
 			tool.y = 16
-			'tool.drawx = 1
-			'tool.drawy = 1
 
 		CASE "PICK COLOR"
 			tool.x = 18
 			tool.y = 12
-			'tool.pickx = 1
-			'tool.pickx = 1
 			
 		CASE "SPRITE BAR"
 			tool.barx = 1
 			tool.bary = 1
+			
+		CASE "MAP GRID"
+			tool.x = 30
+			tool.y = 11
 	END SELECT
 
 END SUB
@@ -456,7 +458,7 @@ SUB updScreen
 		FOR x = 22 TO 38
 			FOR y = 3 TO 19
 				sprType = gridMap(x + cam.x, y + cam.y)
-				IF sprType THEN PUT (x * 8, y * 8), toolSpr(42) 'frameIndex(sprType)
+				IF sprType THEN PUT (x * 8, y * 8), frameIndex(44 * sprType) 
 			NEXT
 		NEXT
 		LOCATE 23, 30: COLOR modeColor: PRINT "x"; cam.x; "y"; cam.y
@@ -487,7 +489,7 @@ SUB updScreen
 		IF setMode = "DRAW" THEN LOCATE tool.x, tool.y: COLOR tool.clr: PRINT CHR$(254)
 	END IF
 	' DEBUG_
-	LOCATE 22, 28: COLOR consoleColor: PRINT tool.barx; tool.bary; sideBarIndex(tool.barx, tool.bary)
+	LOCATE 22, 28: COLOR consoleColor: PRINT tool.barx; tool.bary; tool.picked'sideBarIndex(tool.barx, tool.bary)
 	
 END SUB
 
@@ -524,16 +526,13 @@ SUB userInput
 
 	CASE 82
 	' pos tool to pick a color in spr mode (INS)
-		setMode = "PICK COLOR"
+		IF sysApp = "SPRITE" THEN setMode = "PICK COLOR"
 		setToolPos
 
 	CASE 73
 	' pos tool for map and draw mode, depends on app state (PAGE UP)
-		IF sysApp = "SPRITE" THEN 
-			setMode = "DRAW"
-		ELSE
-			setMode = "MAP GRID"
-		END IF
+		IF sysApp = "SPRITE" THEN setMode = "DRAW"
+		IF sysApp = "MAPPING" THEN setMode = "MAP GRID"
 		setToolPos
 		
 	CASE 81
@@ -582,7 +581,8 @@ SUB userInput
 											 
 	CASE 71
 	' pick/place objs in editor (HOME)
-		IF sysApp = "MAPPING" THEN gridMap(cam.x + tool.x, cam.y + tool.y) = tool.picked
+		IF sysApp = "MAPPING" AND setMode = "SPRITE BAR" THEN tool.picked = sideBarIndex(tool.barx, tool.bary)
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" THEN gridMap(cam.x + tool.x, cam.y + tool.y) = tool.picked		
 		IF sysApp = "SPRITE" THEN
 			IF setMode = "DRAW" THEN grid(tool.x - 8, tool.y - 16) = tool.clr
 			IF setMode = "PICK COLOR" THEN
