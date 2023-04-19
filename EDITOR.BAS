@@ -17,14 +17,14 @@ ON ERROR GOTO BADFILE:
 TYPE obj
 	x AS INTEGER
 	y AS INTEGER
-'	drawx AS INTEGER
-'	drawy AS INTEGER
-'	pickx AS INTEGER
-'	picky AS INTEGER
+' drawx AS INTEGER
+' drawy AS INTEGER
+' pickx AS INTEGER
+' picky AS INTEGER
 	barx AS INTEGER
 	bary AS INTEGER
-'	collide AS INTEGER
-'	sprName AS STRING * 8
+' collide AS INTEGER
+' sprName AS STRING * 8
 	picked AS INTEGER
 	clr AS INTEGER
 	spr AS INTEGER
@@ -58,10 +58,10 @@ DIM SHARED setMode AS STRING
 DIM SHARED consoleColor
 DIM SHARED modeColor
 DIM SHARED modeText AS STRING
-DIM SHARED sprCount
+DIM SHARED sprNum
 
-DIM SHARED sprIndex(2800)
-DIM SHARED frameIndex(2800)
+DIM SHARED sprIndex(2850)
+DIM SHARED frameIndex(2850)
 DIM SHARED pakName AS STRING
 
 DIM SHARED colorPal(16)
@@ -120,32 +120,12 @@ SUB handleFile
 			CLOSE #1
 			updScreen
 
-
 		CASE "SAVE PAK"
-			CLS
-			PUT (8, 8), frameIndex, PSET
-			ERASE frameIndex
-			index = 0
-			FOR b = 1 TO 4
-				FOR i = 1 TO 38
-					index = index + 1
-					GET (8 * i, b * 8)-(8 + (8 * i), 8 + (b * 8)), frameIndex(42 * index)
-				NEXT
-			NEXT
-
 			LOCATE 23, 2: INPUT "PAK NAME:", filen
 			OPEN filen FOR OUTPUT AS #1
-			total = (SprNum * 42) + 1
+			total = (SprNum * 44)
 			FOR i = 1 TO total
 				PRINT #1, frameIndex(i)
-			NEXT
-
-			'FOR i = 1 TO SprNum
-			' PRINT #1, sprNameList(i)    ' need the names in the game?
-			'NEXT
-
-			FOR i = 1 TO SprNum
-				PRINT #1, sprTypeData(i)
 			NEXT
 			CLOSE #1
 			filen = ""
@@ -153,19 +133,9 @@ SUB handleFile
 		CASE "LOAD PAK"
 			LOCATE 23, 2: INPUT "LOAD PAK: ", filen
 			OPEN filen FOR INPUT AS #1
-			fileLen = (SprNum * 42) + 1
+			fileLen = (SprNum * 44)
 			FOR i = 1 TO fileLen
 				INPUT #1, sprIndex(i)
-			NEXT
-			index = 0
-			FOR i = 6386 TO 6537
-				index = index + 1
-				INPUT #1, sprNameList(index)
-			NEXT
-			index = 0
-			FOR i = 6538 TO 6689
-				index = index + 1
-				INPUT #1, sprTypeData(index)
 			NEXT
 			CLOSE #1
 			pakName = filen
@@ -208,7 +178,7 @@ SUB handleFile
 			NEXT
 
 		CASE "SAVE MAP"
-				LOCATE 23, 2: INPUT "MAP NAME: ", filen
+			LOCATE 23, 2: INPUT "MAP NAME: ", filen
 			OPEN filen FOR OUTPUT AS #1
 			FOR x = 0 TO gmSize
 				FOR y = 0 TO gmSize
@@ -238,10 +208,10 @@ END SUB
 
 SUB handleMap
 
+	COLOR consoleColor
 	WHILE INKEY$ <> "": WEND
 	SELECT CASE sysTask
 		CASE "REPL TILE"
-			COLOR consoleColor
 			LOCATE 23, 2: INPUT "REPLACE:", sprite0
 			LOCATE 23, 2: INPUT "WITH:", sprite1
 			FOR x = 0 TO gSize
@@ -251,7 +221,6 @@ SUB handleMap
 			NEXT
 
 		CASE "FILL"
-			COLOR consoleColor
 			LOCATE 23, 2: INPUT "COORDx:", coord0
 			LOCATE 23, 2: INPUT "COORDy:", coord1
 			LOCATE 23, 2: INPUT "FILL SPR#:", getSpr
@@ -262,7 +231,6 @@ SUB handleMap
 			NEXT
 
 		CASE "RAND"
-			COLOR consoleColor
 			LOCATE 23, 2: INPUT "COORDx:", coord0
 			LOCATE 23, 2: INPUT "COORDy:", coord1
 			LOCATE 23, 2: INPUT "#1-255:", noise
@@ -279,8 +247,8 @@ END SUB
 
 SUB handleSprite
 
-	WHILE INKEY$ <> "": WEND
 	COLOR consoleColor
+	WHILE INKEY$ <> "": WEND
 	SELECT CASE sysTask
 		CASE "DEL PIXEL"
 			grid(tool.x - 8, tool.y - 16) = 0
@@ -297,7 +265,7 @@ SUB handleSprite
 		CASE "PLACE"
 			index = sideBarIndex(tool.barx, tool.bary)
 			barGrid(tool.barx, tool.bary) = index
-			GET (110, 80)-(118, 88), frameIndex(38 * index)
+			GET (110, 80)-(118, 88), frameIndex(44 * index)
 	END SELECT
 	sysTask = ""
 
@@ -307,27 +275,22 @@ SUB initEditor
 
 	SCREEN 13
 	consoleColor = 43
-	
 	sysApp = "SPRITE"
 	setMode = "DRAW"
 	modeColor = 52
 	modeText = "MODE:SPRITE"
 	setToolPos
-
 	tool.spr = 42
 	tool.clr = modeColor
-		
 	gridColor = 21
 	gmSize = 100
 	gSize = 7
-	
 	cam.x = 30
 	cam.y = 11
-	
 	SprNum = 64
 	
-	FOR x = 1 to 8
-		FOR y = 1 to 8
+	FOR x = 1 TO 8
+		FOR y = 1 TO 8
 			index = index + 1
 			sideBarIndex(x, y) = index
 		NEXT
@@ -372,10 +335,8 @@ SUB setToolPos
 			'tool.pickx = 1
 			
 		CASE "SPRITE BAR"
-			tool.x = 3
-			tool.y = 3
-			tool.barx = 0
-			tool.bary = 0
+			tool.barx = 1
+			tool.bary = 1
 	END SELECT
 
 END SUB
@@ -498,11 +459,19 @@ SUB updScreen
 	LOCATE 2, 29: PRINT modeText
 
 	IF sysApp = "MAPPING" THEN
+		LINE (24, 24)-(88, 88), 0, BF
+		FOR x = 1 TO 8
+			FOR y = 1 TO 8
+				index = barGrid(x, y)
+				IF index THEN PUT ((x + 2) * 8, (y + 2) * 8), frameIndex(44 * index)
+			NEXT
+		NEXT
+	
 		LINE (176, 24)-(312, 160), 0, BF
 		FOR x = 22 TO 38
 			FOR y = 3 TO 19
 				sprType = gridMap(x + cam.x, y + cam.y)
-				IF sprType = 0 THEN PUT (x * 8, y * 8), sprIndex(420)
+				IF sprType = 0 THEN PUT (x * 8, y * 8), frameIndex(sprType)
 			NEXT
 		NEXT
 		LOCATE 23, 30: COLOR modeColor: PRINT "x"; cam.x; "y"; cam.y
@@ -511,13 +480,13 @@ SUB updScreen
 
 	IF sysApp = "SPRITE" THEN
 		IF setMode = "SPRITE BAR" THEN
-		LINE (24, 24)-(88, 88), 17, BF
-		FOR x = 1 TO 8
-			FOR y = 1 TO 8
-				index = barGrid(x, y)
-				IF index THEN PUT ((x + 3) * 8, (y + 3) * 8), frameIndex(38 * index)
+			LINE (24, 24)-(88, 88), 0, BF
+			FOR x = 1 TO 8
+				FOR y = 1 TO 8
+					index = barGrid(x, y)
+					IF index THEN PUT ((x + 2) * 8, (y + 2) * 8), frameIndex(44 * index)
+				NEXT
 			NEXT
-		NEXT
 		END IF
 	
 		FOR x = 8 TO 15
@@ -604,10 +573,8 @@ SUB userInput
 	' move tool (W)
 		IF sysApp = "MAPPING" AND cam.y > 0 THEN cam.y = cam.y - 1
 		IF sysApp = "SPRITE" THEN
-' *** draw mode x and y are flipped??
-
 			IF setMode = "DRAW" AND tool.x > 8 AND tool.x < 16 THEN tool.x = tool.x - 1
-			IF setMode = "SPRITE BAR" AND tool.bary > 0 THEN tool.bary = tool.bary - 1
+			IF setMode = "SPRITE BAR" AND tool.bary - 1 > 0 THEN tool.bary = tool.bary - 1
 		END IF
 
 	CASE 31
@@ -615,7 +582,7 @@ SUB userInput
 		IF sysApp = "MAPPING" AND cam.y < 80 THEN cam.y = cam.y + 1
 		IF sysApp = "SPRITE" THEN
 			IF setMode = "DRAW" AND tool.x > 7 AND tool.x < 15 THEN tool.x = tool.x + 1
-			IF setMode = "SPRITE BAR" AND tool.bary < 9 THEN tool.bary = tool.bary + 1
+			IF setMode = "SPRITE BAR" AND tool.bary + 1 < 9 THEN tool.bary = tool.bary + 1
 		END IF
 
 	CASE 30
@@ -624,8 +591,7 @@ SUB userInput
 		IF sysApp = "SPRITE" THEN
 			IF setMode = "DRAW" AND tool.y > 16 AND tool.y < 24 THEN tool.y = tool.y - 1
 			IF setMode = "PICK COLOR" AND tool.y > 12 AND tool.y < 29 THEN tool.y = tool.y - 1
-			IF setMode = "SPRITE BAR" AND tool.barx > 0 THEN tool.barx = tool.barx - 1
-			
+			IF setMode = "SPRITE BAR" AND tool.barx - 1 > 0 THEN tool.barx = tool.barx - 1
 		END IF
 
 	CASE 32
@@ -634,12 +600,12 @@ SUB userInput
 		IF sysApp = "SPRITE" THEN
 			IF setMode = "DRAW" AND tool.y > 15 AND tool.y < 23 THEN tool.y = tool.y + 1
 			IF setMode = "PICK COLOR" AND tool.y > 11 AND tool.y < 28 THEN tool.y = tool.y + 1
-			IF setMode = "SPRITE BAR" AND tool.barx < 9 THEN tool.barx = tool.barx + 1
+			IF setMode = "SPRITE BAR" AND tool.barx + 1 < 9 THEN tool.barx = tool.barx + 1
 		END IF
 											 
 	CASE 71
 	' pick/place objs in editor (HOME)
-		IF sysApp = "MAPPING" THEN gridMap(cam.x + tool.x, cam.y + tool.y) = 420     ' tool.picked  
+		IF sysApp = "MAPPING" THEN gridMap(cam.x + tool.x, cam.y + tool.y) = tool.picked
 		IF sysApp = "SPRITE" THEN
 			IF setMode = "DRAW" THEN grid(tool.x - 8, tool.y - 16) = tool.clr
 			IF setMode = "PICK COLOR" THEN
