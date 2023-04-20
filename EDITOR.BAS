@@ -195,15 +195,10 @@ SUB handleFile
 			OPEN filen FOR OUTPUT AS #1
 			FOR x = 0 TO gmSize
 				FOR y = 0 TO gmSize
-					IF y < gmSize THEN
-						PRINT #1, gridMap(x, y); ",";
-					ELSE
-						PRINT #1, gridMap(x, y);
-					END IF
-				IF y = gmSize THEN PRINT #1,
+					PRINT #1, gridMap(x, y)			
 				NEXT
 			NEXT
-			CLOSE #1
+			CLOSE #1			
 
 		CASE "LOAD MAP"
 			LOCATE 23, 2: INPUT "LOAD MAP: ", filen
@@ -641,7 +636,6 @@ SUB userInput
 
 	IF sysApp = "GAME" AND setMode = "PLAY" THEN
 		gridMap(win.x + user.x, win.y + user.y) = user.ftile
-		SLEEP
 	END IF
 
 	k = INP(96)
@@ -744,7 +738,7 @@ SUB userInput
 	CASE 71
 	' pick/place objs in editor (HOME)
 		IF sysApp = "MAPPING" AND setMode = "SPRITE BAR" THEN tool.picked = sideBarIndex(tool.barx, tool.bary)
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" THEN gridMap(cam.x + tool.x, cam.y + tool.y) = tool.picked
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" THEN gridMap(cam.x + tool.x, cam.y + tool.y) = tool.picked			
 		IF sysApp = "SPRITE" THEN
 			IF setMode = "DRAW" THEN grid(tool.x - 8, tool.y - 16) = tool.clr
 			IF setMode = "PICK COLOR" THEN
