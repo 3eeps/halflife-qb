@@ -135,7 +135,7 @@ SUB handleFile
 			FOR i = 1 TO fileLen
 				PRINT #1, frameIndex(i)
 			NEXT
-									
+			
 			FOR x = 1 TO 8
 				FOR y = 1 TO 8
 					PRINT #1, barGrid(x, y)
@@ -230,7 +230,7 @@ SUB handleGame
 		actor(i).target = -1
 		actor(i).steps = 0
 		actor(i).direction = RND * 4
-		actor(i).spr = 44 * 2
+		actor(i).spr = 44 * 1
 		actor(i).ftile = gridMap(actor(i).x, actor(i).y)
 		gridMap(actor(i).x, actor(i).y) = actor(i).spr				
 	NEXT
@@ -277,7 +277,7 @@ SUB initEditor
 	maxAi = 1
 	vdist = 5
 	user.x = 20
-	user.y = 12
+	user.y = 11
 	user.spr = 44 * 1
 	win.x = 30 - user.x
 	win.y = 49 - user.y
