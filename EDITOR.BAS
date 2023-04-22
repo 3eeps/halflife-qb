@@ -59,6 +59,7 @@ DIM SHARED spriteIndex(3200)
 DIM SHARED colorPalette(16)
 DIM SHARED cursorSprite(84)
 
+DIM SHARED renderSprGrid
 DIM SHARED consoleText AS STRING
 DIM SHARED modeText AS STRING
 DIM SHARED sysTask AS STRING
@@ -79,6 +80,131 @@ DO
 LOOP UNTIL closeApp = 1
 WHILE INKEY$ <> "": WEND
 SYSTEM
+
+SUB getInput
+
+	IF sysApp = "GAME" THEN mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.ftile
+	k = INP(96)
+	SELECT CASE k
+	CASE 17
+	' move cursor (W)
+		IF setMode = "PLAY" AND mapWindow.y > 0 THEN mapWindow.y = mapWindow.y - 1
+		IF setMode = "SPRITE BAR" AND cursor.bary - 1 > 0 THEN cursor.bary = cursor.bary - 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND gameCam.y > 0 THEN gameCam.y = gameCam.y - 1
+		IF sysApp = "SPRITE" THEN
+			IF setMode = "DRAW" AND cursor.x > 8 AND cursor.x < 16 THEN cursor.x = cursor.x - 1
+		END IF
+
+	CASE 31
+	' move cursor (S)
+		IF setMode = "PLAY" AND mapWindow.y < 70 THEN mapWindow.y = mapWindow.y + 1
+		IF setMode = "SPRITE BAR" AND cursor.bary + 1 < 9 THEN cursor.bary = cursor.bary + 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND gameCam.y < 80 THEN gameCam.y = gameCam.y + 1
+		IF sysApp = "SPRITE" THEN
+			IF setMode = "DRAW" AND cursor.x > 7 AND cursor.x < 15 THEN cursor.x = cursor.x + 1
+		END IF
+
+	CASE 30
+	' move cursor (A)
+		IF setMode = "PLAY" AND mapWindow.x > 0 THEN mapWindow.x = mapWindow.x - 1
+		IF setMode = "SPRITE BAR" AND cursor.barx - 1 > 0 THEN cursor.barx = cursor.barx - 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND gameCam.x > 0 THEN gameCam.x = gameCam.x - 1
+		IF sysApp = "SPRITE" THEN
+			IF setMode = "DRAW" AND cursor.y > 16 AND cursor.y < 24 THEN cursor.y = cursor.y - 1
+			IF setMode = "PICK COLOR" AND cursor.y > 13 AND cursor.y < 29 THEN cursor.y = cursor.y - 1
+		END IF
+
+	CASE 32
+	' move cursor (D)
+		IF setMode = "PLAY" AND mapWindow.x < 65 THEN mapWindow.x = mapWindow.x + 1
+		IF setMode = "SPRITE BAR" AND cursor.barx + 1 < 9 THEN cursor.barx = cursor.barx + 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND gameCam.x < 80 THEN gameCam.x = gameCam.x + 1
+		IF sysApp = "SPRITE" THEN
+			IF setMode = "DRAW" AND cursor.y > 15 AND cursor.y < 23 THEN cursor.y = cursor.y + 1
+			IF setMode = "PICK COLOR" AND cursor.y > 11 AND cursor.y < 28 THEN cursor.y = cursor.y + 1
+		END IF
+	
+	CASE 41
+	' open consoleText (~)
+		sysConsole
+
+	CASE 59
+	' spr mode (F1)
+		sysApp = "SPRITE"
+		setMode = "DRAW"
+		modeText = "MODE:SPRITE"
+		modeColor = 52
+		setCursorPos
+		renderSprGrid = 0
+		CLS
+
+	CASE 60
+	' map mode (F2)
+		sysApp = "MAPPING"
+		setMode = "MAP GRID"
+		modeText = "MODE:MAPPER"
+		modeColor = 39
+		setCursorPos
+		renderSprGrid = 0
+		CLS
+		
+	CASE 61
+	' game mode (F3)
+		sysApp = "GAME"
+		setMode = "PLAY"
+		modeText = "MODE:GAME"
+		modeColor = 47
+		handleGame
+		CLS
+		
+	CASE 15
+	' pos cursor to sprite bar (TAB)
+		setMode = "SPRITE BAR"
+		renderSprGrid = 1
+		setCursorPos
+
+	CASE 82
+	' pos cursor to pick a color in spr mode (INS)
+		IF sysApp = "SPRITE" THEN setMode = "PICK COLOR"
+		renderSprGrid = 0
+		setCursorPos
+
+	CASE 73
+	' pos cursor for map and draw mode, depends on app state (PAGE UP)
+		IF sysApp = "SPRITE" THEN setMode = "DRAW"
+		IF sysApp = "MAPPING" THEN setMode = "MAP GRID"
+		renderSprGrid = 0
+		setCursorPos
+		
+	CASE 81
+	' store current spr on draw grid on screen (PAGE DOWN)
+		IF sysApp = "SPRITE" AND setMode = "SPRITE BAR" THEN sysTask = "PLACE"
+		handleSprite
+	
+	CASE 79
+	' rem pixel on cursor pos (END)
+		IF sysApp = "SPRITE" AND setMode = "DRAW" THEN sysTask = "DEL PIXEL"
+		handleSprite
+
+	CASE 71
+	' pick/place objs in editor (HOME)
+		IF sysApp = "MAPPING" AND setMode = "SPRITE BAR" THEN cursor.picked = spriteGridIndex(cursor.barx, cursor.bary)
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" THEN mapGrid(gameCam.x + cursor.x, gameCam.y + cursor.y) = cursor.picked
+		IF sysApp = "SPRITE" THEN
+			IF setMode = "DRAW" THEN drawGrid(cursor.x - 8, cursor.y - 16) = cursor.clr
+			IF setMode = "PICK COLOR" THEN
+				FOR y = 13 TO 29
+					IF cursor.x = 18 AND cursor.y = y THEN cursor.clr = colorPalette(y - 12)
+				NEXT
+			END IF
+		END IF
+	END SELECT
+	IF sysApp = "GAME" AND setMode = "PLAY" THEN
+		user.ftile = mapGrid(mapWindow.x + user.x, mapWindow.y + user.y)
+		mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.spr
+	END IF
+
+END SUB
 
 SUB handleFile
 
@@ -231,9 +357,10 @@ SUB handleSprite
 			 drawGrid(cursor.x - 8, cursor.y - 16) = 0
 			
 		CASE "PLACE"
+			renderSprGrid = 1
 			index = spriteGridIndex(cursor.barx, cursor.bary)
 			spriteGrid(cursor.barx, cursor.bary) = index
-			GET (110, 80)-(118, 88), spriteIndex(44 * index)			
+			GET (110, 80)-(118, 88), spriteIndex(44 * index)
 	END SELECT
 	sysTask = ""
 
@@ -552,7 +679,7 @@ SUB updScreen
 
 	COLOR modeColor
 	LINE (0, 0)-(320, 16), modeColor, BF
-	LOCATE 2, 2: PRINT "FILE:"; UCASE$(fileName)
+	LOCATE 2, 2: PRINT "FILE:"; 
 	LOCATE 2, 29: PRINT modeText
 	WAIT &H3DA, 8
 	
@@ -573,14 +700,16 @@ SUB updScreen
 		LOCATE 19: COLOR 8: PRINT "target:"; entity(1).target
 		LOCATE 20: COLOR 48: PRINT "state:"; entity(1).state
 	ELSE
-		LINE (24, 24)-(88, 88), 0, BF
-		FOR x = 1 TO 8
-			FOR y = 1 TO 8
-				index = spriteGrid(x, y)
-				IF index THEN PUT ((x + 2) * 8, (y + 2) * 8), spriteIndex(44 * index)
+		IF renderSprGrid = 1 THEN
+			LINE (24, 24)-(88, 88), 0, BF
+			FOR x = 1 TO 8
+				FOR y = 1 TO 8
+					index = spriteGrid(x, y)
+					IF index THEN PUT ((x + 2) * 8, (y + 2) * 8), spriteIndex(44 * index)
+				NEXT
 			NEXT
-		NEXT
-		IF setMode = "SPRITE BAR" THEN PUT ((cursor.barx + 2) * 8, (cursor.bary + 2) * 8), cursorSprite(42)
+			IF setMode = "SPRITE BAR" THEN PUT ((cursor.barx + 2) * 8, (cursor.bary + 2) * 8), cursorSprite(42)
+		END IF
 	END IF
 
 	IF sysApp = "MAPPING" THEN
@@ -617,131 +746,8 @@ SUB updScreen
 		NEXT
 				
 		IF setMode = "DRAW" THEN LOCATE cursor.x, cursor.y: COLOR cursor.clr: PRINT CHR$(254)
-		IF setMode = "PICK COLOR" THEN LOCATE cursor.x, cursor.y: COLOR consoleColor: PRINT CHR$(248)
+		IF setMode = "PICK COLOR" THEN LOCATE cursor.x, cursor.y: COLOR cursor.y - 12: PRINT CHR$(248)
 	END IF
 	
-END SUB
-
-SUB getInput
-
-	IF sysApp = "GAME" AND setMode = "PLAY" THEN
-		mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.ftile
-	END IF
-
-	k = INP(96)
-	SELECT CASE k
-	CASE 17
-	' move cursor (W)
-		IF setMode = "PLAY" AND mapWindow.y > 0 THEN mapWindow.y = mapWindow.y - 1
-		IF setMode = "SPRITE BAR" AND cursor.bary - 1 > 0 THEN cursor.bary = cursor.bary - 1
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND gameCam.y > 0 THEN gameCam.y = gameCam.y - 1
-		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND cursor.x > 8 AND cursor.x < 16 THEN cursor.x = cursor.x - 1
-		END IF
-
-	CASE 31
-	' move cursor (S)
-		IF setMode = "PLAY" AND mapWindow.y < 70 THEN mapWindow.y = mapWindow.y + 1
-		IF setMode = "SPRITE BAR" AND cursor.bary + 1 < 9 THEN cursor.bary = cursor.bary + 1
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND gameCam.y < 80 THEN gameCam.y = gameCam.y + 1
-		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND cursor.x > 7 AND cursor.x < 15 THEN cursor.x = cursor.x + 1
-		END IF
-
-	CASE 30
-	' move cursor (A)
-		IF setMode = "PLAY" AND mapWindow.x > 0 THEN mapWindow.x = mapWindow.x - 1
-		IF setMode = "SPRITE BAR" AND cursor.barx - 1 > 0 THEN cursor.barx = cursor.barx - 1
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND gameCam.x > 0 THEN gameCam.x = gameCam.x - 1
-		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND cursor.y > 16 AND cursor.y < 24 THEN cursor.y = cursor.y - 1
-			IF setMode = "PICK COLOR" AND cursor.y > 13 AND cursor.y < 29 THEN cursor.y = cursor.y - 1
-		END IF
-
-	CASE 32
-	' move cursor (D)
-		IF setMode = "PLAY" AND mapWindow.x < 65 THEN mapWindow.x = mapWindow.x + 1
-		IF setMode = "SPRITE BAR" AND cursor.barx + 1 < 9 THEN cursor.barx = cursor.barx + 1
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND gameCam.x < 80 THEN gameCam.x = gameCam.x + 1
-		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND cursor.y > 15 AND cursor.y < 23 THEN cursor.y = cursor.y + 1
-			IF setMode = "PICK COLOR" AND cursor.y > 11 AND cursor.y < 28 THEN cursor.y = cursor.y + 1
-		END IF
-	
-	CASE 41
-	' open consoleText (~)
-		sysConsole
-
-	CASE 59
-	' spr mode (F1)
-		sysApp = "SPRITE"
-		setMode = "DRAW"
-		modeText = "MODE:SPRITE"
-		modeColor = 52
-		setCursorPos
-		CLS
-
-	CASE 60
-	' map mode (F2)
-		sysApp = "MAPPING"
-		setMode = "MAP GRID"
-		modeText = "MODE:MAPPER"
-		modeColor = 39
-		setCursorPos
-		CLS
-		
-	CASE 61
-	' game mode (F3)
-		sysApp = "GAME"
-		setMode = "PLAY"
-		modeText = "MODE:GAME"
-		modeColor = 47
-		handleGame
-		CLS
-		
-	CASE 15
-	' pos cursor to sprite bar (TAB)
-		setMode = "SPRITE BAR"
-		setCursorPos
-
-	CASE 82
-	' pos cursor to pick a color in spr mode (INS)
-		IF sysApp = "SPRITE" THEN setMode = "PICK COLOR"
-		setCursorPos
-
-	CASE 73
-	' pos cursor for map and draw mode, depends on app state (PAGE UP)
-		IF sysApp = "SPRITE" THEN setMode = "DRAW"
-		IF sysApp = "MAPPING" THEN setMode = "MAP GRID"
-		setCursorPos
-		
-	CASE 81
-	' store current spr on draw grid on screen (PAGE DOWN)
-		IF sysApp = "SPRITE" AND setMode = "SPRITE BAR" THEN sysTask = "PLACE"
-		handleSprite
-	
-	CASE 79
-	' rem pixel on cursor pos (END)
-		IF sysApp = "SPRITE" AND setMode = "DRAW" THEN sysTask = "DEL PIXEL"
-		handleSprite
-
-	CASE 71
-	' pick/place objs in editor (HOME)
-		IF sysApp = "MAPPING" AND setMode = "SPRITE BAR" THEN cursor.picked = spriteGridIndex(cursor.barx, cursor.bary)
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" THEN mapGrid(gameCam.x + cursor.x, gameCam.y + cursor.y) = cursor.picked
-		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" THEN drawGrid(cursor.x - 8, cursor.y - 16) = cursor.clr
-			IF setMode = "PICK COLOR" THEN
-				FOR y = 13 TO 29
-					IF cursor.x = 18 AND cursor.y = y THEN cursor.clr = colorPalette(y - 12)
-				NEXT
-			END IF
-		END IF
-	END SELECT
-	IF sysApp = "GAME" AND setMode = "PLAY" THEN
-		user.ftile = mapGrid(mapWindow.x + user.x, mapWindow.y + user.y)
-		mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.spr
-	END IF
-
 END SUB
 
