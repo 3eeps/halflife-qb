@@ -7,7 +7,7 @@ DECLARE SUB updScreen ()
 DECLARE SUB initEditor ()
 DECLARE SUB setCursorPos ()
 DECLARE SUB updEntity ()
-DECLARE SUB sysconsoleText ()
+DECLARE SUB sysConsole ()
 RANDOMIZE TIMER
 ON ERROR GOTO BADFILE:
 
@@ -319,7 +319,7 @@ SUB setCursorPos
 
 END SUB
 
-SUB sysconsoleText
+SUB sysConsole
 
 	LOCATE 23, 8: COLOR 17: PRINT "'HELP' FOR COMMANDS"
 	COLOR consoleColor
@@ -670,7 +670,7 @@ SUB getInput
 	
 	CASE 41
 	' open consoleText (~)
-		sysconsoleText
+		sysConsole
 
 	CASE 59
 	' spr mode (F1)
