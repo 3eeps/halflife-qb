@@ -28,12 +28,13 @@ TYPE obj
 	ftile AS INTEGER
 END TYPE
 
-DIM SHARED mapWindow AS obj
+' init variables
 DIM SHARED user AS obj
 DIM SHARED entity(32) AS obj
-DIM SHARED visibleObjList(3) AS obj
 DIM SHARED cursor AS obj
 DIM SHARED gameCam  AS obj
+DIM SHARED mapWindow AS obj
+DIM SHARED visibleObjList(3) AS obj
 
 DIM SHARED maxTarget
 DIM SHARED minDistance
@@ -41,8 +42,12 @@ DIM SHARED targetType
 DIM SHARED visDist
 DIM SHARED maxAi
 
-DIM SHARED drawGrid(8, 8)
 DIM SHARED mapGrid(100, 100)
+DIM SHARED drawGrid(8, 8)
+DIM SHARED spriteGrid(8, 8)
+DIM SHARED spriteGridIndex(8, 8)
+DIM SHARED loadArray(8, 8)
+DIM SHARED maxSprite
 DIM SHARED spriteSize
 DIM SHARED mapSize
 
@@ -52,20 +57,15 @@ DIM SHARED modeColor
 
 DIM SHARED spriteIndex(3200)
 DIM SHARED colorPalette(16)
-DIM SHARED loadArray(8, 8)
 DIM SHARED cursorSprite(84)
-DIM SHARED spriteGrid(8, 8)
-DIM SHARED spriteGridIndex(8, 8)
 
 DIM SHARED consoleText AS STRING
 DIM SHARED modeText AS STRING
 DIM SHARED sysTask AS STRING
 DIM SHARED sysApp AS STRING
 DIM SHARED setMode AS STRING
-DIM SHARED closeApp
-
-DIM SHARED maxSprite
 DIM SHARED fileName AS STRING
+DIM SHARED closeApp
 
 initEditor
 BADFILE:
