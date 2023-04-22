@@ -702,6 +702,7 @@ SUB updScreen
 		LOCATE 19: COLOR 8: PRINT "target:"; entity(1).target
 		LOCATE 20: COLOR 48: PRINT "state:"; entity(1).state
 	ELSE
+		' render sprite grid
 		IF renderSprGrid = 1 THEN
 			LINE (24, 24)-(88, 88), 0, BF
 			FOR x = 1 TO 8
@@ -720,7 +721,7 @@ SUB updScreen
 		FOR x = 22 TO 38
 			FOR y = 3 TO 19
 				index = mapGrid(x + gameCam.x, y + gameCam.y)
-				IF sprIndex THEN PUT (x * 8, y * 8), spriteIndex(44 * index)
+				IF index THEN PUT (x * 8, y * 8), spriteIndex(44 * index)
 			NEXT
 		NEXT
 		LOCATE 23, 30: COLOR modeColor: PRINT "x"; gameCam.x; "y"; gameCam.y
