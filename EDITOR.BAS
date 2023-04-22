@@ -35,6 +35,7 @@ DIM SHARED cursor AS obj
 DIM SHARED gameCam  AS obj
 DIM SHARED mapWindow AS obj
 DIM SHARED visibleObjList(3) AS obj
+DIM SHARED visTileList(64) AS obj
 
 DIM SHARED maxTarget
 DIM SHARED minDistance
@@ -67,6 +68,9 @@ DIM SHARED sysApp AS STRING
 DIM SHARED setMode AS STRING
 DIM SHARED fileName AS STRING
 DIM SHARED closeApp
+
+DIM SHARED tileCount
+DIM SHARED nextTile
 
 initEditor
 BADFILE:
@@ -203,6 +207,19 @@ SUB getInput
 		user.ftile = mapGrid(mapWindow.x + user.x, mapWindow.y + user.y)
 		mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.spr
 	END IF
+	
+	FOR x = (mapWindow.x + user.x) - visDist TO (mapWindow.x + user.x) + visDist
+		FOR y = (mapWindow.y + user.y) - visDist TO (mapWindow.y + user.y) + visDist
+			nextTile = mapGrid(x, y)
+			IF nextTile = 0 THEN						
+				IF tileCount < 64 THEN
+					tileCount = tileCount + 1
+					visTileList(tileCount).x = x
+					visTileList(tileCount).y = y
+				END IF
+			END IF
+		NEXT
+	NEXT
 
 END SUB
 
@@ -387,7 +404,7 @@ SUB initEditor
 	
 	maxTarget = 4
 	minDistance = 10000
-	maxAi = 1
+	maxAi = 0
 	visDist = 8
 	user.x = 20
 	user.y = 11
@@ -689,6 +706,7 @@ SUB updScreen
 		LINE (176, 24)-(312, 160), 0, BF
 		FOR x = 22 TO 38
 			FOR y = 3 TO 19
+				'index = visTileList(x + mapWindow.x, y + mapWindow.y)
 				index = mapGrid(x + mapWindow.x, y + mapWindow.y)
 				IF index THEN PUT (x * 8, y * 8), spriteIndex(44 * index)
 			NEXT
@@ -697,7 +715,7 @@ SUB updScreen
 		PUT (240, 88), spriteIndex(44 * user.spr)
 		
 		'DEBUG_
-		LOCATE 17: COLOR 39: PRINT "energy:"; entity(1).energy
+		LOCATE 17: COLOR 39: PRINT "energy:"; nextTile 'entity(1).energy
 		LOCATE 18: COLOR 44: PRINT "hp:"; entity(1).hp
 		LOCATE 19: COLOR 8: PRINT "target:"; entity(1).target
 		LOCATE 20: COLOR 48: PRINT "state:"; entity(1).state
@@ -753,6 +771,7 @@ SUB updScreen
 		IF setMode = "DRAW" THEN LOCATE cursor.x, cursor.y: COLOR cursor.clr: PRINT CHR$(254)
 		IF setMode = "PICK COLOR" THEN LOCATE cursor.x, cursor.y: COLOR cursor.y - 12: PRINT CHR$(248)
 	END IF
+	
 	
 END SUB
 
