@@ -332,6 +332,7 @@ END SUB
 
 SUB handleGame
 
+	' start game in a minimum state of play
 	FOR i = 1 TO maxAi
 		entity(i).x = user.x + 5 '30
 		entity(i).y = user.y + 5 '45
@@ -683,6 +684,7 @@ SUB updScreen
 	LOCATE 2, 29: PRINT modeText
 	WAIT &H3DA, 8
 	
+	' render game tab
 	IF sysApp = "GAME" THEN
 		LINE (176, 24)-(312, 160), 0, BF
 		FOR x = 22 TO 38
@@ -712,6 +714,7 @@ SUB updScreen
 		END IF
 	END IF
 
+	' render map tab
 	IF sysApp = "MAPPING" THEN
 		LINE (176, 24)-(312, 160), 0, BF
 		FOR x = 22 TO 38
@@ -724,6 +727,7 @@ SUB updScreen
 		PUT (240, 88), cursorSprite(cursor.spr)
 	END IF
 
+	' render sprite tab
 	IF sysApp = "SPRITE" THEN
 		FOR x = 8 TO 15
 			FOR y = 16 TO 23
