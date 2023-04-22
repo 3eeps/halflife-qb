@@ -1,13 +1,13 @@
 DEFINT A-Z
-DECLARE SUB userInput ()
+DECLARE SUB getInput ()
 DECLARE SUB handleSprite ()
 DECLARE SUB handleGame ()
-DECLARE SUB sysConsole ()
 DECLARE SUB handleFile ()
 DECLARE SUB updScreen ()
 DECLARE SUB initEditor ()
-DECLARE SUB setToolPos ()
-DECLARE SUB updActors ()
+DECLARE SUB setCursorPos ()
+DECLARE SUB updEntity ()
+DECLARE SUB sysconsoleText ()
 RANDOMIZE TIMER
 ON ERROR GOTO BADFILE:
 
@@ -28,56 +28,55 @@ TYPE obj
 	ftile AS INTEGER
 END TYPE
 
-DIM SHARED win AS obj
+DIM SHARED mapWindow AS obj
 DIM SHARED user AS obj
-DIM SHARED actor(32) AS obj
-DIM SHARED vdistObjList(3) AS obj
-DIM SHARED tool AS obj
-DIM SHARED cam  AS obj
+DIM SHARED entity(32) AS obj
+DIM SHARED visibleObjList(3) AS obj
+DIM SHARED cursor AS obj
+DIM SHARED gameCam  AS obj
 
 DIM SHARED maxTarget
-DIM SHARED minDist
+DIM SHARED minDistance
 DIM SHARED targetType
-DIM SHARED vdist
+DIM SHARED visDist
 DIM SHARED maxAi
 
-DIM SHARED grid(8, 8)
-DIM SHARED gridMap(100, 100)
-DIM SHARED gSize
-DIM SHARED gmSize
+DIM SHARED drawGrid(8, 8)
+DIM SHARED mapGrid(100, 100)
+DIM SHARED spriteSize
+DIM SHARED mapSize
 
 DIM SHARED gridColor
 DIM SHARED consoleColor
 DIM SHARED modeColor
 
-DIM SHARED frameIndex(3200)
-DIM SHARED colorPal(16)
-DIM SHARED src(8, 8)
-DIM SHARED toolSpr(84)
-DIM SHARED barGrid(8, 8)
-DIM SHARED sideBarIndex(8, 8)
+DIM SHARED spriteIndex(3200)
+DIM SHARED colorPalette(16)
+DIM SHARED loadArray(8, 8)
+DIM SHARED cursorSprite(84)
+DIM SHARED spriteGrid(8, 8)
+DIM SHARED spriteGridIndex(8, 8)
 
-DIM SHARED console AS STRING
+DIM SHARED consoleText AS STRING
+DIM SHARED modeText AS STRING
 DIM SHARED sysTask AS STRING
 DIM SHARED sysApp AS STRING
 DIM SHARED setMode AS STRING
-DIM SHARED modeText AS STRING
-DIM SHARED exitApp
+DIM SHARED closeApp
 
-DIM SHARED filen AS STRING
-DIM SHARED SprNum
-DIM SHARED pakName AS STRING
+DIM SHARED maxSprite
+DIM SHARED fileName AS STRING
 
 initEditor
 BADFILE:
 	sysTask = ""
-	filen = ""
+	fileName = ""
 DO
-	userInput
-	updActors
+	getInput
+	updEntity
 	updScreen
 	SLEEP
-LOOP UNTIL exitApp = 1
+LOOP UNTIL closeApp = 1
 WHILE INKEY$ <> "": WEND
 SYSTEM
 
@@ -88,124 +87,115 @@ SUB handleFile
 	SELECT CASE sysTask
 		CASE "NEW"
 			IF sysApp = "SPRITE" THEN
-				FOR x = 0 TO gSize
-					FOR y = 0 TO gSize
-						grid(x, y) = 0
-					NEXT
-				NEXT
+				ERASE drawGrid
 			ELSE
-				FOR x = 0 TO gmSize
-					FOR y = 0 TO gmSize
-						gridMap(x, y) = 0
-					NEXT
-				NEXT
+				ERASE mapGrid
 			END IF
-			filen = ""
+			fileName = ""
 
 		CASE "SAVE GFX"
-			LOCATE 23, 2: INPUT "GFX NAME:", filen
-			OPEN filen FOR OUTPUT AS #1
+			LOCATE 23, 2: INPUT "GFX NAME:", fileName
+			OPEN fileName FOR OUTPUT AS #1
 			FOR x = 0 TO 8
 				FOR y = 0 TO 8
-					IF y < gSize THEN
-						PRINT #1, grid(x, y); ",";
+					IF y < spriteSize THEN
+						PRINT #1, drawGrid(x, y); ",";
 					ELSE
-						PRINT #1, grid(x, y);
+						PRINT #1, drawGrid(x, y);
 					END IF
-				IF y = gSize THEN PRINT #1,
+				IF y = spriteSize THEN PRINT #1,
 				NEXT
 			NEXT
 			CLOSE #1
 
 		CASE "LOAD GFX"
-			LOCATE 23, 2: INPUT "LOAD GFX:", filen
-			OPEN filen FOR INPUT AS #1
+			LOCATE 23, 2: INPUT "LOAD GFX:", fileName
+			OPEN fileName FOR INPUT AS #1
 			FOR x = 0 TO 8
 				FOR y = 0 TO 8
-					INPUT #1, grid(x, y)
+					INPUT #1, drawGrid(x, y)
 				NEXT
 			NEXT
 			CLOSE #1
 			updScreen
 
-		CASE "SAVE PAK"		
-			LOCATE 23, 2: INPUT "PAK NAME:", filen
-			OPEN filen FOR OUTPUT AS #1
-			fileLen = (SprNum * 44)
+		CASE "SAVE PAK"
+			LOCATE 23, 2: INPUT "PAK NAME:", fileName
+			OPEN fileName FOR OUTPUT AS #1
+			fileLen = (maxSprite * 44)
 			FOR i = 1 TO fileLen
-				PRINT #1, frameIndex(i)
+				PRINT #1, spriteIndex(i)
 			NEXT
 			
 			FOR x = 1 TO 8
 				FOR y = 1 TO 8
-					PRINT #1, barGrid(x, y)
+					PRINT #1, spriteGrid(x, y)
 				NEXT
 			NEXT
 			CLOSE #1
-			filen = ""
+			fileName = ""
 
 		CASE "LOAD PAK"
-			LOCATE 23, 2: INPUT "LOAD PAK: ", filen
-			OPEN filen FOR INPUT AS #1
-			fileLen = (SprNum * 44)
+			LOCATE 23, 2: INPUT "LOAD PAK: ", fileName
+			OPEN fileName FOR INPUT AS #1
+			fileLen = (maxSprite * 44)
 			FOR i = 1 TO fileLen
-				INPUT #1, frameIndex(i)
+				INPUT #1, spriteIndex(i)
 			NEXT
 			
 			FOR x = 1 TO 8
 				FOR y = 1 TO 8
-					INPUT #1, barGrid(x, y)
+					INPUT #1, spriteGrid(x, y)
 				NEXT
 			NEXT
 			CLOSE #1
-			pakName = filen
-			filen = ""
+			fileName = ""
 
 		CASE "NEW PAL"
 			FOR i = 1 TO 16
-				LOCATE 23, 2: INPUT "COLOR:", colorPal(i)
+				LOCATE 23, 2: INPUT "COLOR:", colorPalette(i)
 			NEXT
 
 		CASE "LIST PAL"
 			FOR i = 1 TO 16
-				 COLOR colorPal(i): PRINT colorPal(i)
+				 COLOR colorPalette(i): PRINT colorPalette(i)
 			NEXT
 			SLEEP
 
 		CASE "SAVE PAL"
-			LOCATE 23, 2: INPUT "PAL NAME:", filen
-			OPEN filen FOR OUTPUT AS #1
+			LOCATE 23, 2: INPUT "PAL NAME:", fileName
+			OPEN fileName FOR OUTPUT AS #1
 			FOR i = 1 TO 16
-				PRINT #1, colorPal(i)
+				PRINT #1, colorPalette(i)
 			NEXT
 			CLOSE #1
-			filen = ""
+			fileName = ""
 
 		CASE "LOAD PAL"
-			LOCATE 23, 2: INPUT "LOAD PAL:", filen
-			OPEN filen FOR INPUT AS #1
+			LOCATE 23, 2: INPUT "LOAD PAL:", fileName
+			OPEN fileName FOR INPUT AS #1
 			FOR i = 1 TO 16
-				INPUT #1, colorPal(i)
+				INPUT #1, colorPalette(i)
 			NEXT
 			CLOSE #1
-			filen = ""
+			fileName = ""
 
 		CASE "SAVE MAP"
-			LOCATE 23, 2: INPUT "MAP NAME: ", filen
-			OPEN filen FOR OUTPUT AS #1
-			FOR x = 0 TO gmSize
-				FOR y = 0 TO gmSize
-					PRINT #1, gridMap(x, y)			
+			LOCATE 23, 2: INPUT "MAP NAME: ", fileName
+			OPEN fileName FOR OUTPUT AS #1
+			FOR x = 0 TO mapSize
+				FOR y = 0 TO mapSize
+					PRINT #1, mapGrid(x, y)
 				NEXT
 			NEXT
-			CLOSE #1			
+			CLOSE #1
 
 		CASE "LOAD MAP"
-			LOCATE 23, 2: INPUT "LOAD MAP: ", filen
-			OPEN filen FOR INPUT AS #1
-			FOR x = 0 TO gmSize
-				FOR y = 0 TO gmSize
-					INPUT #1, gridMap(x, y)
+			LOCATE 23, 2: INPUT "LOAD MAP: ", fileName
+			OPEN fileName FOR INPUT AS #1
+			FOR x = 0 TO mapSize
+				FOR y = 0 TO mapSize
+					INPUT #1, mapGrid(x, y)
 				NEXT
 			NEXT
 			CLOSE #1
@@ -217,17 +207,17 @@ END SUB
 SUB handleGame
 
 	FOR i = 1 TO maxAi
-		actor(i).x = 30
-		actor(i).y = 45
-		actor(i).hp = 35
-		actor(i).state = "wand"
-		actor(i).energy = 45
-		actor(i).target = -1
-		actor(i).steps = 0
-		actor(i).direction = RND * 4
-		actor(i).spr = 44 * 1
-		actor(i).ftile = gridMap(actor(i).x, actor(i).y)
-		gridMap(actor(i).x, actor(i).y) = actor(i).spr				
+		entity(i).x = user.x + 5 '30
+		entity(i).y = user.y + 5 '45
+		entity(i).hp = 35
+		entity(i).state = "wand"
+		entity(i).energy = 45
+		entity(i).target = -1
+		entity(i).steps = 0
+		entity(i).direction = RND * 4
+		entity(i).spr = 2
+		entity(i).ftile = mapGrid(entity(i).x, entity(i).y)
+		mapGrid(entity(i).x, entity(i).y) = entity(i).spr
 	NEXT
 	
 END SUB
@@ -238,12 +228,12 @@ SUB handleSprite
 	WHILE INKEY$ <> "": WEND
 	SELECT CASE sysTask
 		CASE "DEL PIXEL"
-			grid(tool.x - 8, tool.y - 16) = 0
+			 drawGrid(cursor.x - 8, cursor.y - 16) = 0
 			
 		CASE "PLACE"
-			index = sideBarIndex(tool.barx, tool.bary)
-			barGrid(tool.barx, tool.bary) = index
-			GET (110, 80)-(118, 88), frameIndex(44 * index)			
+			index = spriteGridIndex(cursor.barx, cursor.bary)
+			spriteGrid(cursor.barx, cursor.bary) = index
+			GET (110, 80)-(118, 88), spriteIndex(44 * index)			
 	END SELECT
 	sysTask = ""
 
@@ -257,89 +247,89 @@ SUB initEditor
 	setMode = "DRAW"
 	modeColor = 52
 	modeText = "MODE:SPRITE"
-	setToolPos
-	tool.spr = 42
-	tool.clr = modeColor
-	gridColor = 31
-	gmSize = 100
-	gSize = 7
-	cam.x = 30
-	cam.y = 11
-	SprNum = 64
+	setCursorPos
+	cursor.spr = 42
+	cursor.clr = modeColor
+	gridColor = 5
+	mapSize = 100
+	spriteSize = 7
+	gameCam.x = 30
+	gameCam.y = 11
+	maxSprite = 64
 	
 	maxTarget = 4
-	minDist = 10000
+	minDistance = 10000
 	maxAi = 1
-	vdist = 5
+	visDist = 8
 	user.x = 20
 	user.y = 11
-	user.spr = 44 * 1
-	win.x = 30 - user.x
-	win.y = 49 - user.y
+	user.spr = 1
+	mapWindow.x = 30 - user.x
+	mapWindow.y = 49 - user.y
 	
 	FOR x = 1 TO 8
 		FOR y = 1 TO 8
 			index = index + 1
-			sideBarIndex(x, y) = index
+			spriteGridIndex(x, y) = index
 		NEXT
 	NEXT
 
 	FOR i = 1 TO 16
-		colorPal(i) = i
+		colorPalette(i) = i
 	NEXT
 
-	OPEN "TOOL.GFX" FOR INPUT AS #1
+	OPEN "CURSOR.GFX" FOR INPUT AS #1
 	FOR x = 0 TO 8
 		FOR y = 0 TO 8
-			INPUT #1, src(x, y)
+			INPUT #1, loadArray(x, y)
 		NEXT
 	NEXT
 	CLOSE #1
 	FOR x = 0 TO 8
 		FOR y = 0 TO 8
-			PSET (x, y), src(x, y)
+			PSET (x, y), loadArray(x, y)
 		NEXT
 	NEXT
-	GET (0, 0)-(8, 8), toolSpr(42)
-	ERASE src
+	GET (0, 0)-(8, 8), cursorSprite(42)
+	ERASE loadArray
 	CLS
 	updScreen
 
 END SUB
 
-SUB setToolPos
+SUB setCursorPos
 
 	SELECT CASE setMode
 		CASE "DRAW"
-			tool.x = 8
-			tool.y = 16
+			cursor.x = 8
+			cursor.y = 16
 
 		CASE "PICK COLOR"
-			tool.x = 18
-			tool.y = 13
+			cursor.x = 18
+			cursor.y = 13
 			
 		CASE "SPRITE BAR"
-			tool.barx = 1
-			tool.bary = 1
+			cursor.barx = 1
+			cursor.bary = 1
 			
 		CASE "MAP GRID"
-			tool.x = 30
-			tool.y = 11
+			cursor.x = 30
+			cursor.y = 11
 	END SELECT
 
 END SUB
 
-SUB sysConsole
+SUB sysconsoleText
 
 	LOCATE 23, 8: COLOR 17: PRINT "'HELP' FOR COMMANDS"
 	COLOR consoleColor
 	
 	WHILE INKEY$ <> "": WEND
-	LOCATE 23, 2: INPUT ">>>: ", console
+	LOCATE 23, 2: INPUT ">>>: ", consoleText
 	WHILE INKEY$ <> "": WEND
-	SELECT CASE console
+	SELECT CASE consoleText
 		CASE "exit"
-			exitApp = 1
+			closeApp = 1
 
 		CASE "save pak"
 			sysTask = "SAVE PAK"
@@ -376,7 +366,7 @@ SUB sysConsole
 		CASE "color"
 			IF sysApp = "SPRITE" THEN
 				LOCATE 23, 2: INPUT "COLOR:", num
-				tool.clr = num
+				cursor.clr = num
 			END IF
 
 		CASE "load pak"
@@ -408,75 +398,75 @@ SUB sysConsole
 			SLEEP
 
 	END SELECT
-	console = ""
+	consoleText = ""
 	CLS
 	updScreen
 
 END SUB
 
-SUB updActors
+SUB updEntity
 
 	IF sysApp = "GAME" THEN
 	FOR i = 1 TO maxAi
 	
-		IF actor(i).hp <= 0 THEN
-			actor(i).state = "dead"
+		IF entity(i).hp <= 0 THEN
+			entity(i).state = "dead"
 			GOTO skipAi
 		END IF
 
-		gridMap(actor(i).x, actor(i).y) = actor(i).ftile
-		currPosx = actor(i).x
-		currPosy = actor(i).x
+		mapGrid(entity(i).x, entity(i).y) = entity(i).ftile
+		currPosx = entity(i).x
+		currPosy = entity(i).x
 	
-		actor(i).energy = actor(i).energy - RND * 2
-		IF actor(i).energy < 1 THEN actor(i).hp = actor(i).hp - RND * 2
+		entity(i).energy = entity(i).energy - RND * 2
+		IF entity(i).energy < 1 THEN entity(i).hp = entity(i).hp - RND * 2
 
-		IF actor(i).energy < 25 THEN
-		actor(i).target = 420
-		actor(i).state = "find"
+		IF entity(i).energy < 25 THEN
+			entity(i).target = 1
+			entity(i).state = "find"
 		ELSE
-		actor(i).state = "wand"
+			entity(i).state = "wand"
 		END IF
 				 
-		IF actor(i).target = -1 THEN actor(i).state = "wand"
+		IF entity(i).target = -1 THEN entity(i).state = "wand"
 	
-		SELECT CASE actor(i).state
+		SELECT CASE entity(i).state
 
 			CASE "wand"
 		
-				IF actor(i).direction = 0 THEN
+				IF entity(i).direction = 0 THEN
 					dx = 1: dy = 0
-				ELSEIF actor(i).direction = 1 THEN
+				ELSEIF entity(i).direction = 1 THEN
 					dx = -1: dy = 0
-				ELSEIF actor(i).direction = 2 THEN
+				ELSEIF entity(i).direction = 2 THEN
 					dx = 0: dy = -1
-				ELSEIF actor(i).direction = 3 THEN
+				ELSEIF entity(i).direction = 3 THEN
 					dx = 0: dy = 1
 				END IF
-				newx = actor(i).x + dx
-				newy = actor(i).y + dy
+				newx = entity(i).x + dx
+				newy = entity(i).y + dy
 		
-				IF gridMap(newx, newy) = 0 AND actor(i).steps < 4 THEN
-					actor(i).x = newx
-					actor(i).y = newy
-					actor(i).steps = actor(i).steps + 1
+				IF mapGrid(newx, newy) = 0 AND entity(i).steps < 4 THEN
+					entity(i).x = newx
+					entity(i).y = newy
+					entity(i).steps = entity(i).steps + 1
 				ELSE
-					actor(i).steps = 0
+					entity(i).steps = 0
 					rand = RND * 4
-					actor(i).direction = rand
+					entity(i).direction = rand
 				END IF
 
 			CASE "find"
 			
-				FOR x = actor(i).x - vdist TO actor(i).x + vdist
-					FOR y = actor(i).y - vdist TO actor(i).y + vdist
-						IF gridMap(x, y) = actor(i).target THEN
-							dx = actor(i).x - x
-							dy = actor(i).y - y
+				FOR x = entity(i).x - visDist TO entity(i).x + visDist
+					FOR y = entity(i).y - visDist TO entity(i).y + visDist
+						IF mapGrid(x, y) = entity(i).target THEN
+							dx = entity(i).x - x
+							dy = entity(i).y - y
 							IF targetCount < maxTarget THEN
 								targetCount = targetCount + 1
-								vdistObjList(targetCount).x = dx
-								vdistObjList(targetCount).y = dy
+								visibleObjList(targetCount).x = dx
+								visibleObjList(targetCount).y = dy
 							END IF
 						END IF
 					NEXT
@@ -484,73 +474,73 @@ SUB updActors
 	
 				IF targetCount > 0 THEN
 					FOR j = 1 TO targetCount
-						dx = vdistObjList(j).x - actor(i).x
-						dy = vdistObjList(j).y - actor(i).y
+						dx = visibleObjList(j).x - entity(i).x
+						dy = visibleObjList(j).y - entity(i).y
 						distSqr = dx ^ 2 + dy ^ 2
-						IF distSqr < minDist ^ 2 THEN
+						IF distSqr < minDistance ^ 2 THEN
 							closestTarget = j
-							minDist = SQR(distSqr)
+							minDistance = SQR(distSqr)
 						END IF
 					NEXT
-					dx = vdistObjList(closestTarget).x
-					dy = vdistObjList(closestTarget).y
-					ERASE vdistObjList
+					dx = visibleObjList(closestTarget).x
+					dy = visibleObjList(closestTarget).y
+					ERASE visibleObjList
 				END IF
 			
 				IF dx < 0 AND dy < 0 THEN
 					rand = RND * 2
 					IF rand = 1 THEN
-						actor(i).x = actor(i).x + 1
+						entity(i).x = entity(i).x + 1
 					ELSE
-						actor(i).y = actor(i).y + 1
+						entity(i).y = entity(i).y + 1
 					END IF
 				ELSEIF dx > 0 AND dy > 0 THEN
 					rand = RND * 2
 					IF rand = 1 THEN
-						actor(i).x = actor(i).x - 1
+						entity(i).x = entity(i).x - 1
 					ELSE
-						actor(i).y = actor(i).y - 1
+						entity(i).y = entity(i).y - 1
 					END IF
 				ELSEIF dx < 0 AND dy > 0 THEN
 					rand = RND * 2
 					IF rand = 1 THEN
-						actor(i).x = actor(i).x + 1
+						entity(i).x = entity(i).x + 1
 					ELSE
-						actor(i).y = actor(i).y - 1
+						entity(i).y = entity(i).y - 1
 					END IF
 				ELSEIF dx > 0 AND dy < 0 THEN
 					rand = RND * 2
 					IF rand = 1 THEN
-						actor(i).x = actor(i).x - 1
+						entity(i).x = entity(i).x - 1
 					ELSE
-						actor(i).y = actor(i).y + 1
+						entity(i).y = entity(i).y + 1
 					END IF
-				ELSEIF dx = 0 AND dy < 0 THEN actor(i).y = actor(i).y + 1
-				ELSEIF dx = 0 AND dy > 0 THEN actor(i).y = actor(i).y - 1
-				ELSEIF dx < 0 AND dy = 0 THEN actor(i).x = actor(i).x + 1
-				ELSEIF dx > 0 AND dy = 0 THEN actor(i).x = actor(i).x - 1
+				ELSEIF dx = 0 AND dy < 0 THEN entity(i).y = entity(i).y + 1
+				ELSEIF dx = 0 AND dy > 0 THEN entity(i).y = entity(i).y - 1
+				ELSEIF dx < 0 AND dy = 0 THEN entity(i).x = entity(i).x + 1
+				ELSEIF dx > 0 AND dy = 0 THEN entity(i).x = entity(i).x - 1
 				END IF
 			
-				IF gridMap(actor(i).x + 1, actor(i).y) = actor(i).target THEN
+				IF mapGrid(entity(i).x + 1, entity(i).y) = entity(i).target THEN
 					foundTarget = 1
-				ELSEIF gridMap(actor(i).x - 1, actor(i).y) = actor(i).target THEN
+				ELSEIF mapGrid(entity(i).x - 1, entity(i).y) = entity(i).target THEN
 					foundTarget = 1
-				ELSEIF gridMap(actor(i).x, actor(i).y + 1) = actor(i).target THEN
+				ELSEIF mapGrid(entity(i).x, entity(i).y + 1) = entity(i).target THEN
 					foundTarget = 1
-				ELSEIF gridMap(actor(i).x, actor(i).y - 1) = actor(i).target THEN
+				ELSEIF mapGrid(entity(i).x, entity(i).y - 1) = entity(i).target THEN
 					foundTarget = 1
 				END IF
 		
 				IF foundTarget THEN
-					actor(i).x = currPosx
-					actor(i).x = currPosy
-					actor(i).target = -1
-					gridMap(actor(i).x, actor(i).y) = 0
-					actor(i).energy = actor(i).energy + 25
+					entity(i).x = currPosx
+					entity(i).x = currPosy
+					entity(i).target = -1
+					mapGrid(entity(i).x, entity(i).y) = 0
+					entity(i).energy = entity(i).energy + 25
 				END IF
 		END SELECT
-		actor(i).ftile = gridMap(actor(i).x, actor(i).y)
-		gridMap(actor(i).x, actor(i).y) = actor(i).spr
+		entity(i).ftile = mapGrid(entity(i).x, entity(i).y)
+		mapGrid(entity(i).x, entity(i).y) = entity(i).spr
 	
 skipAi:
 	NEXT
@@ -562,7 +552,7 @@ SUB updScreen
 
 	COLOR modeColor
 	LINE (0, 0)-(320, 16), modeColor, BF
-	LOCATE 2, 2: PRINT "FILE:"; UCASE$(filen)
+	LOCATE 2, 2: PRINT "FILE:"; UCASE$(fileName)
 	LOCATE 2, 29: PRINT modeText
 	WAIT &H3DA, 8
 	
@@ -570,46 +560,46 @@ SUB updScreen
 		LINE (176, 24)-(312, 160), 0, BF
 		FOR x = 22 TO 38
 			FOR y = 3 TO 19
-				sprIndex = gridMap(x + win.x, y + win.y)
-				IF sprIndex THEN PUT (x * 8, y * 8), frameIndex(44 * sprIndex)
+				index = mapGrid(x + mapWindow.x, y + mapWindow.y)
+				IF index THEN PUT (x * 8, y * 8), spriteIndex(44 * index)
 			NEXT
 		NEXT
-		LOCATE 23, 30: COLOR modeColor: PRINT "x"; win.x; "y"; win.y
-		PUT (240, 88), frameIndex(user.spr)
+		LOCATE 23, 30: COLOR modeColor: PRINT "x"; mapWindow.x; "y"; mapWindow.y
+		PUT (240, 88), spriteIndex(44 * user.spr)
 		
 		'DEBUG_
-		LOCATE 17: COLOR 39: PRINT "energy:"; actor(1).energy
-		LOCATE 18: COLOR 44: PRINT "hp:"; actor(1).hp
-		LOCATE 19: COLOR 8: PRINT "target:"; actor(1).target
-		LOCATE 20: COLOR 48: PRINT "state:"; actor(1).state
+		LOCATE 17: COLOR 39: PRINT "energy:"; entity(1).energy
+		LOCATE 18: COLOR 44: PRINT "hp:"; entity(1).hp
+		LOCATE 19: COLOR 8: PRINT "target:"; entity(1).target
+		LOCATE 20: COLOR 48: PRINT "state:"; entity(1).state
 	ELSE
 		LINE (24, 24)-(88, 88), 0, BF
 		FOR x = 1 TO 8
 			FOR y = 1 TO 8
-				sprIndex = barGrid(x, y)
-				IF sprIndex THEN PUT ((x + 2) * 8, (y + 2) * 8), frameIndex(44 * sprIndex)
+				index = spriteGrid(x, y)
+				IF index THEN PUT ((x + 2) * 8, (y + 2) * 8), spriteIndex(44 * index)
 			NEXT
 		NEXT
-		IF setMode = "SPRITE BAR" THEN PUT ((tool.barx + 2) * 8, (tool.bary + 2) * 8), toolSpr(42)
+		IF setMode = "SPRITE BAR" THEN PUT ((cursor.barx + 2) * 8, (cursor.bary + 2) * 8), cursorSprite(42)
 	END IF
 
 	IF sysApp = "MAPPING" THEN
 		LINE (176, 24)-(312, 160), 0, BF
 		FOR x = 22 TO 38
 			FOR y = 3 TO 19
-				sprIndex = gridMap(x + cam.x, y + cam.y)
-				IF sprIndex THEN PUT (x * 8, y * 8), frameIndex(44 * sprIndex)
+				index = mapGrid(x + gameCam.x, y + gameCam.y)
+				IF sprIndex THEN PUT (x * 8, y * 8), spriteIndex(44 * index)
 			NEXT
 		NEXT
-		LOCATE 23, 30: COLOR modeColor: PRINT "x"; cam.x; "y"; cam.y
-		PUT (240, 88), toolSpr(tool.spr)
+		LOCATE 23, 30: COLOR modeColor: PRINT "x"; gameCam.x; "y"; gameCam.y
+		PUT (240, 88), cursorSprite(cursor.spr)
 	END IF
 
 	IF sysApp = "SPRITE" THEN
 		FOR x = 8 TO 15
 			FOR y = 16 TO 23
-				IF grid(x - 8, y - 16) THEN
-					LOCATE x, y: COLOR grid(x - 8, y - 16): PRINT CHR$(254)
+				IF drawGrid(x - 8, y - 16) THEN
+					LOCATE x, y: COLOR drawGrid(x - 8, y - 16): PRINT CHR$(254)
 				ELSE
 					LOCATE x, y: COLOR gridColor: PRINT CHR$(254)
 				END IF
@@ -618,69 +608,69 @@ SUB updScreen
 		
 		FOR x = 0 TO 8
 			FOR y = 0 TO 8
-				PSET (x + 110, y + 80), grid(y, x)
+				PSET (x + 110, y + 80), drawGrid(y, x)
 			NEXT
-		NEXT		
+		NEXT
 		
 		FOR i = 1 TO 16
-			LOCATE 18, i + 12: COLOR colorPal(i): PRINT CHR$(254)
+			LOCATE 18, i + 12: COLOR colorPalette(i): PRINT CHR$(254)
 		NEXT
 				
-		IF setMode = "DRAW" THEN LOCATE tool.x, tool.y: COLOR tool.clr: PRINT CHR$(254)
-		IF setMode = "PICK COLOR" THEN LOCATE tool.x, tool.y: COLOR consoleColor: PRINT CHR$(248)
+		IF setMode = "DRAW" THEN LOCATE cursor.x, cursor.y: COLOR cursor.clr: PRINT CHR$(254)
+		IF setMode = "PICK COLOR" THEN LOCATE cursor.x, cursor.y: COLOR consoleColor: PRINT CHR$(248)
 	END IF
 	
 END SUB
 
-SUB userInput
+SUB getInput
 
 	IF sysApp = "GAME" AND setMode = "PLAY" THEN
-		gridMap(win.x + user.x, win.y + user.y) = user.ftile
+		mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.ftile
 	END IF
 
 	k = INP(96)
 	SELECT CASE k
 	CASE 17
-	' move tool (W)
-		IF setMode = "PLAY" AND win.y > 0 THEN win.y = win.y - 1
-		IF setMode = "SPRITE BAR" AND tool.bary - 1 > 0 THEN tool.bary = tool.bary - 1
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.y > 0 THEN cam.y = cam.y - 1
+	' move cursor (W)
+		IF setMode = "PLAY" AND mapWindow.y > 0 THEN mapWindow.y = mapWindow.y - 1
+		IF setMode = "SPRITE BAR" AND cursor.bary - 1 > 0 THEN cursor.bary = cursor.bary - 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND gameCam.y > 0 THEN gameCam.y = gameCam.y - 1
 		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND tool.x > 8 AND tool.x < 16 THEN tool.x = tool.x - 1
+			IF setMode = "DRAW" AND cursor.x > 8 AND cursor.x < 16 THEN cursor.x = cursor.x - 1
 		END IF
 
 	CASE 31
-	' move tool (S)
-		IF setMode = "PLAY" AND win.y < 70 THEN win.y = win.y + 1
-		IF setMode = "SPRITE BAR" AND tool.bary + 1 < 9 THEN tool.bary = tool.bary + 1
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.y < 80 THEN cam.y = cam.y + 1
+	' move cursor (S)
+		IF setMode = "PLAY" AND mapWindow.y < 70 THEN mapWindow.y = mapWindow.y + 1
+		IF setMode = "SPRITE BAR" AND cursor.bary + 1 < 9 THEN cursor.bary = cursor.bary + 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND gameCam.y < 80 THEN gameCam.y = gameCam.y + 1
 		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND tool.x > 7 AND tool.x < 15 THEN tool.x = tool.x + 1
+			IF setMode = "DRAW" AND cursor.x > 7 AND cursor.x < 15 THEN cursor.x = cursor.x + 1
 		END IF
 
 	CASE 30
-	' move tool (A)
-		IF setMode = "PLAY" AND win.x > 0 THEN win.x = win.x - 1
-		IF setMode = "SPRITE BAR" AND tool.barx - 1 > 0 THEN tool.barx = tool.barx - 1
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.x > 0 THEN cam.x = cam.x - 1
+	' move cursor (A)
+		IF setMode = "PLAY" AND mapWindow.x > 0 THEN mapWindow.x = mapWindow.x - 1
+		IF setMode = "SPRITE BAR" AND cursor.barx - 1 > 0 THEN cursor.barx = cursor.barx - 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND gameCam.x > 0 THEN gameCam.x = gameCam.x - 1
 		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND tool.y > 16 AND tool.y < 24 THEN tool.y = tool.y - 1
-			IF setMode = "PICK COLOR" AND tool.y > 13 AND tool.y < 29 THEN tool.y = tool.y - 1
+			IF setMode = "DRAW" AND cursor.y > 16 AND cursor.y < 24 THEN cursor.y = cursor.y - 1
+			IF setMode = "PICK COLOR" AND cursor.y > 13 AND cursor.y < 29 THEN cursor.y = cursor.y - 1
 		END IF
 
 	CASE 32
-	' move tool (D)
-		IF setMode = "PLAY" AND win.x < 65 THEN win.x = win.x + 1
-		IF setMode = "SPRITE BAR" AND tool.barx + 1 < 9 THEN tool.barx = tool.barx + 1
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND cam.x < 80 THEN cam.x = cam.x + 1
+	' move cursor (D)
+		IF setMode = "PLAY" AND mapWindow.x < 65 THEN mapWindow.x = mapWindow.x + 1
+		IF setMode = "SPRITE BAR" AND cursor.barx + 1 < 9 THEN cursor.barx = cursor.barx + 1
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" AND gameCam.x < 80 THEN gameCam.x = gameCam.x + 1
 		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" AND tool.y > 15 AND tool.y < 23 THEN tool.y = tool.y + 1
-			IF setMode = "PICK COLOR" AND tool.y > 11 AND tool.y < 28 THEN tool.y = tool.y + 1
+			IF setMode = "DRAW" AND cursor.y > 15 AND cursor.y < 23 THEN cursor.y = cursor.y + 1
+			IF setMode = "PICK COLOR" AND cursor.y > 11 AND cursor.y < 28 THEN cursor.y = cursor.y + 1
 		END IF
 	
 	CASE 41
-	' open console (~)
-		sysConsole
+	' open consoleText (~)
+		sysconsoleText
 
 	CASE 59
 	' spr mode (F1)
@@ -688,7 +678,7 @@ SUB userInput
 		setMode = "DRAW"
 		modeText = "MODE:SPRITE"
 		modeColor = 52
-		setToolPos
+		setCursorPos
 		CLS
 
 	CASE 60
@@ -697,7 +687,7 @@ SUB userInput
 		setMode = "MAP GRID"
 		modeText = "MODE:MAPPER"
 		modeColor = 39
-		setToolPos
+		setCursorPos
 		CLS
 		
 	CASE 61
@@ -710,20 +700,20 @@ SUB userInput
 		CLS
 		
 	CASE 15
-	' pos tool to sprite bar (TAB)
+	' pos cursor to sprite bar (TAB)
 		setMode = "SPRITE BAR"
-		setToolPos
+		setCursorPos
 
 	CASE 82
-	' pos tool to pick a color in spr mode (INS)
+	' pos cursor to pick a color in spr mode (INS)
 		IF sysApp = "SPRITE" THEN setMode = "PICK COLOR"
-		setToolPos
+		setCursorPos
 
 	CASE 73
-	' pos tool for map and draw mode, depends on app state (PAGE UP)
+	' pos cursor for map and draw mode, depends on app state (PAGE UP)
 		IF sysApp = "SPRITE" THEN setMode = "DRAW"
 		IF sysApp = "MAPPING" THEN setMode = "MAP GRID"
-		setToolPos
+		setCursorPos
 		
 	CASE 81
 	' store current spr on draw grid on screen (PAGE DOWN)
@@ -731,26 +721,26 @@ SUB userInput
 		handleSprite
 	
 	CASE 79
-	' rem pixel on tool pos (END)
-		sysTask = "DEL PIXEL"
+	' rem pixel on cursor pos (END)
+		IF sysApp = "SPRITE" AND setMode = "DRAW" THEN sysTask = "DEL PIXEL"
 		handleSprite
 
 	CASE 71
 	' pick/place objs in editor (HOME)
-		IF sysApp = "MAPPING" AND setMode = "SPRITE BAR" THEN tool.picked = sideBarIndex(tool.barx, tool.bary)
-		IF sysApp = "MAPPING" AND setMode = "MAP GRID" THEN gridMap(cam.x + tool.x, cam.y + tool.y) = tool.picked			
+		IF sysApp = "MAPPING" AND setMode = "SPRITE BAR" THEN cursor.picked = spriteGridIndex(cursor.barx, cursor.bary)
+		IF sysApp = "MAPPING" AND setMode = "MAP GRID" THEN mapGrid(gameCam.x + cursor.x, gameCam.y + cursor.y) = cursor.picked
 		IF sysApp = "SPRITE" THEN
-			IF setMode = "DRAW" THEN grid(tool.x - 8, tool.y - 16) = tool.clr
+			IF setMode = "DRAW" THEN drawGrid(cursor.x - 8, cursor.y - 16) = cursor.clr
 			IF setMode = "PICK COLOR" THEN
 				FOR y = 13 TO 29
-					IF tool.x = 18 AND tool.y = y THEN tool.clr = colorPal(y - 12)
+					IF cursor.x = 18 AND cursor.y = y THEN cursor.clr = colorPalette(y - 12)
 				NEXT
 			END IF
 		END IF
 	END SELECT
 	IF sysApp = "GAME" AND setMode = "PLAY" THEN
-		user.ftile = gridMap(win.x + user.x, win.y + user.y)
-		gridMap(win.x + user.x, win.y + user.y) = user.spr
+		user.ftile = mapGrid(mapWindow.x + user.x, mapWindow.y + user.y)
+		mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.spr
 	END IF
 
 END SUB
