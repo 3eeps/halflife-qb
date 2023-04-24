@@ -8,6 +8,7 @@ DECLARE SUB initEditor ()
 DECLARE SUB setCursorPos ()
 DECLARE SUB updEntity ()
 DECLARE SUB sysConsole ()
+
 RANDOMIZE TIMER
 ON ERROR GOTO BADFILE:
 
@@ -22,7 +23,6 @@ TYPE obj
 	hp AS INTEGER
 	direction AS INTEGER
 	steps AS INTEGER
-	energy AS INTEGER
 	state AS STRING * 4
 	target AS INTEGER
 	ftile AS INTEGER
@@ -34,13 +34,12 @@ DIM SHARED entity(32) AS obj
 DIM SHARED cursor AS obj
 DIM SHARED gameCam  AS obj
 DIM SHARED mapWindow AS obj
-DIM SHARED visibleObjList(3) AS obj
-DIM SHARED visTileList(64) AS obj
+DIM SHARED visibleObjList(8) AS obj
 
 DIM SHARED maxTarget
 DIM SHARED minDistance
-DIM SHARED targetType
 DIM SHARED visDist
+DIM SHARED targetCount
 DIM SHARED maxAi
 
 DIM SHARED mapGrid(100, 100)
@@ -69,9 +68,6 @@ DIM SHARED setMode AS STRING
 DIM SHARED fileName AS STRING
 DIM SHARED closeApp
 
-DIM SHARED tileCount
-DIM SHARED nextTile
-
 initEditor
 BADFILE:
 	sysTask = ""
@@ -87,7 +83,8 @@ SYSTEM
 
 SUB getInput
 
-	IF sysApp = "GAME" THEN mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.ftile
+	IF sysApp = "GAME" AND user.hp > 0 THEN mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.ftile
+	
 	k = INP(96)
 	SELECT CASE k
 	CASE 17
@@ -203,23 +200,10 @@ SUB getInput
 			END IF
 		END IF
 	END SELECT
-	IF sysApp = "GAME" AND setMode = "PLAY" THEN
+	IF sysApp = "GAME" THEN
 		user.ftile = mapGrid(mapWindow.x + user.x, mapWindow.y + user.y)
-		mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.spr
+		mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.spr		
 	END IF
-	
-	FOR x = (mapWindow.x + user.x) - visDist TO (mapWindow.x + user.x) + visDist
-		FOR y = (mapWindow.y + user.y) - visDist TO (mapWindow.y + user.y) + visDist
-			nextTile = mapGrid(x, y)
-			IF nextTile = 0 THEN						
-				IF tileCount < 64 THEN
-					tileCount = tileCount + 1
-					visTileList(tileCount).x = x
-					visTileList(tileCount).y = y
-				END IF
-			END IF
-		NEXT
-	NEXT
 
 END SUB
 
@@ -349,19 +333,26 @@ END SUB
 
 SUB handleGame
 
-	' start game in a minimum state of play
-	FOR i = 1 TO maxAi
-		entity(i).x = user.x + 5 '30
-		entity(i).y = user.y + 5 '45
-		entity(i).hp = 35
-		entity(i).state = "wand"
-		entity(i).energy = 45
-		entity(i).target = -1
-		entity(i).steps = 0
-		entity(i).direction = RND * 4
-		entity(i).spr = 2
-		entity(i).ftile = mapGrid(entity(i).x, entity(i).y)
-		mapGrid(entity(i).x, entity(i).y) = entity(i).spr
+	user.spr = 1
+	user.hp = 50
+	
+	entityCount = 0
+	FOR x = 1 to mapSize
+		FOR y = 1 to mapSize
+			IF mapGrid(x, y) = 1 AND entityCount < maxAi THEN
+				entityCount = entityCount + 1
+				entity(entityCount).x = x
+				entity(entityCount).y = y
+				entity(entityCount).hp = 25
+				entity(entityCount).state = "wand"
+				entity(entityCount).target = -1
+				entity(entityCount).steps = 0
+				entity(entityCount).direction = RND * 4
+				entity(entityCount).spr = 2				
+				mapGrid(entity(entityCount).x, entity(entityCount).y) = entity(entityCount).ftile	
+				mapGrid(entity(entityCount).x, entity(entityCount).y) = entity(entityCount).spr				
+			END IF
+		NEXT
 	NEXT
 	
 END SUB
@@ -404,11 +395,10 @@ SUB initEditor
 	
 	maxTarget = 4
 	minDistance = 10000
-	maxAi = 0
+	maxAi = 16
 	visDist = 8
 	user.x = 20
-	user.y = 11
-	user.spr = 1
+	user.y = 11	
 	mapWindow.x = 30 - user.x
 	mapWindow.y = 49 - user.y
 	
@@ -558,27 +548,19 @@ SUB updEntity
 			entity(i).state = "dead"
 			GOTO skipAi
 		END IF
+		mapGrid(entity(i).x, entity(i).y) = entity(i).ftile	
 
-		mapGrid(entity(i).x, entity(i).y) = entity(i).ftile
-		currPosx = entity(i).x
-		currPosy = entity(i).x
-	
-		entity(i).energy = entity(i).energy - RND * 2
-		IF entity(i).energy < 1 THEN entity(i).hp = entity(i).hp - RND * 2
-
-		IF entity(i).energy < 25 THEN
-			entity(i).target = 1
+		IF entity(i).hp <= 0 THEN
+			entity(i).target = user.spr
 			entity(i).state = "find"
 		ELSE
 			entity(i).state = "wand"
-		END IF
-				 
+		END IF				 
 		IF entity(i).target = -1 THEN entity(i).state = "wand"
 	
 		SELECT CASE entity(i).state
-
-			CASE "wand"
 		
+			CASE "wand"
 				IF entity(i).direction = 0 THEN
 					dx = 1: dy = 0
 				ELSEIF entity(i).direction = 1 THEN
@@ -602,7 +584,7 @@ SUB updEntity
 				END IF
 
 			CASE "find"
-			
+				targetCount = 0
 				FOR x = entity(i).x - visDist TO entity(i).x + visDist
 					FOR y = entity(i).y - visDist TO entity(i).y + visDist
 						IF mapGrid(x, y) = entity(i).target THEN
@@ -610,32 +592,19 @@ SUB updEntity
 							dy = entity(i).y - y
 							IF targetCount < maxTarget THEN
 								targetCount = targetCount + 1
-								visibleObjList(targetCount).x = dx
-								visibleObjList(targetCount).y = dy
+								'visibleObjList(targetCount).x = dx
+								'visibleObjList(targetCount).y = dy
 							END IF
 						END IF
 					NEXT
 				NEXT
-	
-				IF targetCount > 0 THEN
-					FOR j = 1 TO targetCount
-						dx = visibleObjList(j).x - entity(i).x
-						dy = visibleObjList(j).y - entity(i).y
-						distSqr = dx ^ 2 + dy ^ 2
-						IF distSqr < minDistance ^ 2 THEN
-							closestTarget = j
-							minDistance = SQR(distSqr)
-						END IF
-					NEXT
-					dx = visibleObjList(closestTarget).x
-					dy = visibleObjList(closestTarget).y
-					ERASE visibleObjList
-				END IF
 			
+				oldx = entity(i).x
+				oldy = entity(i).y							
 				IF dx < 0 AND dy < 0 THEN
 					rand = RND * 2
 					IF rand = 1 THEN
-						entity(i).x = entity(i).x + 1
+						entity(i).x = entity(i).x + 1						
 					ELSE
 						entity(i).y = entity(i).y + 1
 					END IF
@@ -655,33 +624,23 @@ SUB updEntity
 					END IF
 				ELSEIF dx > 0 AND dy < 0 THEN
 					rand = RND * 2
-					IF rand = 1 THEN
+					IF rand = 1 THEN						
 						entity(i).x = entity(i).x - 1
 					ELSE
 						entity(i).y = entity(i).y + 1
 					END IF
-				ELSEIF dx = 0 AND dy < 0 THEN entity(i).y = entity(i).y + 1
-				ELSEIF dx = 0 AND dy > 0 THEN entity(i).y = entity(i).y - 1
-				ELSEIF dx < 0 AND dy = 0 THEN entity(i).x = entity(i).x + 1
-				ELSEIF dx > 0 AND dy = 0 THEN entity(i).x = entity(i).x - 1
+				ELSEIF dx = 0 AND dy < 0 THEN entity(i).y = entity(i).y + 1	
+				ELSEIF dx = 0 AND dy > 0 THEN entity(i).y = entity(i).y - 1					
+				ELSEIF dx < 0 AND dy = 0 THEN entity(i).x = entity(i).x + 1				
+				ELSEIF dx > 0 AND dy = 0 THEN entity(i).x = entity(i).x - 1						
+				ELSEIF dx = 0 AND dy = 0 THEN
 				END IF
-			
-				IF mapGrid(entity(i).x + 1, entity(i).y) = entity(i).target THEN
-					foundTarget = 1
-				ELSEIF mapGrid(entity(i).x - 1, entity(i).y) = entity(i).target THEN
-					foundTarget = 1
-				ELSEIF mapGrid(entity(i).x, entity(i).y + 1) = entity(i).target THEN
-					foundTarget = 1
-				ELSEIF mapGrid(entity(i).x, entity(i).y - 1) = entity(i).target THEN
-					foundTarget = 1
-				END IF
-		
-				IF foundTarget THEN
-					entity(i).x = currPosx
-					entity(i).x = currPosy
-					entity(i).target = -1
-					mapGrid(entity(i).x, entity(i).y) = 0
-					entity(i).energy = entity(i).energy + 25
+				
+				collide = mapGrid(entity(i).x, entity(i).y)
+				IF collide = user.spr THEN user.hp = user.hp - 5
+				IF collide THEN 
+					entity(i).x = oldx
+					entity(i).y = oldy
 				END IF
 		END SELECT
 		entity(i).ftile = mapGrid(entity(i).x, entity(i).y)
@@ -703,19 +662,18 @@ SUB updScreen
 	
 	' render game tab
 	IF sysApp = "GAME" THEN
-		LINE (176, 24)-(312, 160), 0, BF
-		FOR x = 22 TO 38
-			FOR y = 3 TO 19
-				'index = visTileList(x + mapWindow.x, y + mapWindow.y)
-				index = mapGrid(x + mapWindow.x, y + mapWindow.y)
+		LINE (80, 24)-(212, 160), 0, BF
+		FOR x = 10 TO 26
+			FOR y = 3 TO 19		
+				index = mapGrid(x + mapWindow.x, y + mapWindow.y)				
 				IF index THEN PUT (x * 8, y * 8), spriteIndex(44 * index)
 			NEXT
 		NEXT
-		LOCATE 23, 30: COLOR modeColor: PRINT "x"; mapWindow.x; "y"; mapWindow.y
-		PUT (240, 88), spriteIndex(44 * user.spr)
 		
-		'DEBUG_
-		LOCATE 17: COLOR 39: PRINT "energy:"; nextTile 'entity(1).energy
+		LOCATE 22, 30: COLOR modeColor: PRINT "HP:"; user.hp
+		LOCATE 23, 30: COLOR modeColor: PRINT "x"; mapWindow.x; "y"; mapWindow.y
+		
+		'DEBUG_		
 		LOCATE 18: COLOR 44: PRINT "hp:"; entity(1).hp
 		LOCATE 19: COLOR 8: PRINT "target:"; entity(1).target
 		LOCATE 20: COLOR 48: PRINT "state:"; entity(1).state
@@ -770,8 +728,7 @@ SUB updScreen
 				
 		IF setMode = "DRAW" THEN LOCATE cursor.x, cursor.y: COLOR cursor.clr: PRINT CHR$(254)
 		IF setMode = "PICK COLOR" THEN LOCATE cursor.x, cursor.y: COLOR cursor.y - 12: PRINT CHR$(248)
-	END IF
-	
+	END IF	
 	
 END SUB
 
