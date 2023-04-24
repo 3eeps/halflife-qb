@@ -30,11 +30,11 @@ END TYPE
 
 ' init variables
 DIM SHARED user AS obj
-DIM SHARED entity(32) AS obj
+DIM SHARED entity(16) AS obj
 DIM SHARED cursor AS obj
 DIM SHARED gameCam  AS obj
 DIM SHARED mapWindow AS obj
-DIM SHARED visibleObjList(8) AS obj
+DIM SHARED visibleObjList(4) AS obj
 
 DIM SHARED maxTarget
 DIM SHARED minDistance
@@ -47,6 +47,9 @@ DIM SHARED drawGrid(8, 8)
 DIM SHARED spriteGrid(8, 8)
 DIM SHARED spriteGridIndex(8, 8)
 DIM SHARED loadArray(8, 8)
+DIM SHARED spriteIndex(3200)
+DIM SHARED colorPalette(16)
+DIM SHARED cursorSprite(84)
 DIM SHARED maxSprite
 DIM SHARED spriteSize
 DIM SHARED mapSize
@@ -55,17 +58,13 @@ DIM SHARED gridColor
 DIM SHARED consoleColor
 DIM SHARED modeColor
 
-DIM SHARED spriteIndex(3200)
-DIM SHARED colorPalette(16)
-DIM SHARED cursorSprite(84)
-
-DIM SHARED renderSprGrid
 DIM SHARED consoleText AS STRING
 DIM SHARED modeText AS STRING
 DIM SHARED sysTask AS STRING
 DIM SHARED sysApp AS STRING
 DIM SHARED setMode AS STRING
 DIM SHARED fileName AS STRING
+DIM SHARED renderSprGrid
 DIM SHARED closeApp
 
 initEditor
