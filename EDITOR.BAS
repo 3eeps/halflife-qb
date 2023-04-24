@@ -338,7 +338,7 @@ SUB handleGame
 	entityCount = 0
 	FOR x = 1 to mapSize
 		FOR y = 1 to mapSize
-			IF mapGrid(x, y) = 1 AND entityCount < maxAi THEN
+			IF mapGrid(x, y) = 2 AND entityCount < maxAi THEN
 				entityCount = entityCount + 1
 				entity(entityCount).x = x
 				entity(entityCount).y = y
