@@ -17,18 +17,21 @@ TYPE obj
 	y AS INTEGER
 	barx AS INTEGER
 	bary AS INTEGER
+	firstTarget AS INTEGER
+	secondTarget AS INTEGER
+	thirdTarget AS INTEGER
+	currentTarget AS INTEGER
+	targetCount AS INTEGER
 	picked AS INTEGER
 	clr AS INTEGER
 	spr AS INTEGER
 	hp AS INTEGER
 	direction AS INTEGER
 	steps AS INTEGER
-	state AS STRING * 4
-	target AS INTEGER
+	state AS INTEGER
 	ftile AS INTEGER
 END TYPE
 
-' init variables
 DIM SHARED user AS obj
 DIM SHARED entity(16) AS obj
 DIM SHARED cursor AS obj
@@ -39,7 +42,6 @@ DIM SHARED visibleObjList(4) AS obj
 DIM SHARED maxTarget
 DIM SHARED minDistance
 DIM SHARED visDist
-DIM SHARED targetCount
 DIM SHARED maxAi
 
 DIM SHARED mapGrid(100, 100)
@@ -82,8 +84,7 @@ SYSTEM
 
 SUB getInput
 
-	IF sysApp = "GAME" AND user.hp > 0 THEN mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.ftile
-	
+	IF sysApp = "GAME" THEN mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.ftile	
 	k = INP(96)
 	SELECT CASE k
 	CASE 17
@@ -333,18 +334,21 @@ END SUB
 SUB handleGame
 
 	user.spr = 1
-	user.hp = 50
-	
+	user.hp = 50	
 	entityCount = 0
+	
 	FOR x = 1 to mapSize
 		FOR y = 1 to mapSize
 			IF mapGrid(x, y) = 2 AND entityCount < maxAi THEN
 				entityCount = entityCount + 1
+				entity(entityCount).firstTarget = user.spr
+				entity(entityCount).secondTarget = 32
+				entity(entityCount).thirdTarget = 3
+				entity(entityCount).currentTarget = entity(entityCount).firstTarget
+				entity(entityCount).state = 1
 				entity(entityCount).x = x
 				entity(entityCount).y = y
 				entity(entityCount).hp = 25
-				entity(entityCount).state = "wand"
-				entity(entityCount).target = -1
 				entity(entityCount).steps = 0
 				entity(entityCount).direction = RND * 4
 				entity(entityCount).spr = 2				
@@ -395,7 +399,7 @@ SUB initEditor
 	maxTarget = 4
 	minDistance = 10000
 	maxAi = 16
-	visDist = 8
+	visDist = 4
 	user.x = 20
 	user.y = 11	
 	mapWindow.x = 30 - user.x
@@ -542,24 +546,18 @@ SUB updEntity
 
 	IF sysApp = "GAME" THEN
 	FOR i = 1 TO maxAi
-	
-		IF entity(i).hp <= 0 THEN
-			entity(i).state = "dead"
-			GOTO skipAi
-		END IF
+		IF entity(i).hp <= 0 THEN GOTO skipAi	 				
 		mapGrid(entity(i).x, entity(i).y) = entity(i).ftile	
-
-		IF entity(i).hp <= 0 THEN
-			entity(i).target = user.spr
-			entity(i).state = "find"
-		ELSE
-			entity(i).state = "wand"
-		END IF				 
-		IF entity(i).target = -1 THEN entity(i).state = "wand"
-	
-		SELECT CASE entity(i).state
+		oldx = entity(i).x
+		oldy = entity(i).y		
+		entity(i).targetCount = 0
+		dx = 0
+		dy = 0
 		
-			CASE "wand"
+		SELECT CASE entity(i).state		
+			CASE 1
+				dx = 0
+				dy = 0
 				IF entity(i).direction = 0 THEN
 					dx = 1: dy = 0
 				ELSEIF entity(i).direction = 1 THEN
@@ -569,37 +567,60 @@ SUB updEntity
 				ELSEIF entity(i).direction = 3 THEN
 					dx = 0: dy = 1
 				END IF
+				
 				newx = entity(i).x + dx
-				newy = entity(i).y + dy
-		
+				newy = entity(i).y + dy		
 				IF mapGrid(newx, newy) = 0 AND entity(i).steps < 4 THEN
 					entity(i).x = newx
 					entity(i).y = newy
 					entity(i).steps = entity(i).steps + 1
 				ELSE
 					entity(i).steps = 0
-					rand = RND * 4
-					entity(i).direction = rand
+					entity(i).direction = RND * 4
 				END IF
-
-			CASE "find"
-				targetCount = 0
+								
 				FOR x = entity(i).x - visDist TO entity(i).x + visDist
 					FOR y = entity(i).y - visDist TO entity(i).y + visDist
-						IF mapGrid(x, y) = entity(i).target THEN
+						IF mapGrid(x, y) = entity(i).thirdTarget THEN
+							entity(i).state = 2
+							entity(i).currentTarget = entity(i).thirdTarget
+						ELSEIF mapGrid(x, y) = entity(i).secondTarget THEN 
+							entity(i).state = 2
+							entity(i).currentTarget = entity(i).secondTarget
+						ELSEIF mapGrid(x, y) = entity(i).firstTarget THEN 
+							entity(i).state = 2
+							entity(i).currentTarget = entity(i).firstTarget
+						END IF
+					NEXT
+				NEXT				
+
+			CASE 2						
+				dx = 0
+				dy = 0
+				FOR x = entity(i).x - visDist TO entity(i).x + visDist
+					FOR y = entity(i).y - visDist TO entity(i).y + visDist
+						IF mapGrid(x, y) = entity(i).currentTarget THEN
 							dx = entity(i).x - x
-							dy = entity(i).y - y
-							IF targetCount < maxTarget THEN
-								targetCount = targetCount + 1
-								'visibleObjList(targetCount).x = dx
-								'visibleObjList(targetCount).y = dy
+							dy = entity(i).y - y	
+							IF entity(i).targetCount < maxTarget THEN
+								entity(i).targetCount = entity(i).targetCount + 1
+								visibleObjList(entity(i).targetCount).x = dx
+								visibleObjList(entity(i).targetCount).y = dy
 							END IF
 						END IF
 					NEXT
 				NEXT
-			
-				oldx = entity(i).x
-				oldy = entity(i).y							
+	
+				FOR j = 1 TO entity(i).targetCount
+					dx = visibleObjList(j).x - entity(i).x
+					dy = visibleObjList(j).y - entity(i).y
+					IF dx < visDist AND dy < visDist THEN
+						closestTarget = j
+						dx = visibleObjList(closestTarget).x
+						dy = visibleObjList(closestTarget).y						
+					END IF						
+				NEXT		
+				
 				IF dx < 0 AND dy < 0 THEN
 					rand = RND * 2
 					IF rand = 1 THEN
@@ -632,19 +653,20 @@ SUB updEntity
 				ELSEIF dx = 0 AND dy > 0 THEN entity(i).y = entity(i).y - 1					
 				ELSEIF dx < 0 AND dy = 0 THEN entity(i).x = entity(i).x + 1				
 				ELSEIF dx > 0 AND dy = 0 THEN entity(i).x = entity(i).x - 1						
-				ELSEIF dx = 0 AND dy = 0 THEN
+				ELSEIF dx = 0 AND dy = 0 THEN 
 				END IF
-				
-				collide = mapGrid(entity(i).x, entity(i).y)
-				IF collide = user.spr THEN user.hp = user.hp - 5
-				IF collide THEN 
+			
+				collide = mapGrid(entity(i).x, entity(i).y)											
+				IF collide THEN
+					IF collide = entity(i).firstTarget THEN user.hp = user.hp - 5
 					entity(i).x = oldx
 					entity(i).y = oldy
+					entity(i).state = 1					
 				END IF
-		END SELECT
+				ERASE visibleObjList				
+		END SELECT			
 		entity(i).ftile = mapGrid(entity(i).x, entity(i).y)
-		mapGrid(entity(i).x, entity(i).y) = entity(i).spr
-	
+		mapGrid(entity(i).x, entity(i).y) = entity(i).spr	
 skipAi:
 	NEXT
 END IF
@@ -667,15 +689,12 @@ SUB updScreen
 				index = mapGrid(x + mapWindow.x, y + mapWindow.y)				
 				IF index THEN PUT (x * 8, y * 8), spriteIndex(44 * index)
 			NEXT
-		NEXT
-		
-		LOCATE 22, 30: COLOR modeColor: PRINT "HP:"; user.hp
-		LOCATE 23, 30: COLOR modeColor: PRINT "x"; mapWindow.x; "y"; mapWindow.y
-		
+		NEXT		
+		LOCATE 22, 30: COLOR consoleColor: PRINT "HP:"; user.hp
+		LOCATE 23, 30: COLOR modeColor: PRINT "x"; mapWindow.x; "y"; mapWindow.y		
 		'DEBUG_		
-		LOCATE 18: COLOR 44: PRINT "hp:"; entity(1).hp
-		LOCATE 19: COLOR 8: PRINT "target:"; entity(1).target
-		LOCATE 20: COLOR 48: PRINT "state:"; entity(1).state
+		LOCATE 19,2 : COLOR 8: PRINT "target:"; entity(1).currentTarget
+		LOCATE 20, 2: COLOR 48: PRINT "state:"; entity(1).state
 	ELSE
 		' render sprite grid
 		IF renderSprGrid = 1 THEN
@@ -699,6 +718,8 @@ SUB updScreen
 				IF index THEN PUT (x * 8, y * 8), spriteIndex(44 * index)
 			NEXT
 		NEXT
+		shownum = spriteGridIndex(cursor.barx, cursor.bary)
+		LOCATE 22, 30: COLOR modeColor: PRINT "sprindex"; shownum
 		LOCATE 23, 30: COLOR modeColor: PRINT "x"; gameCam.x; "y"; gameCam.y
 		PUT (240, 88), cursorSprite(cursor.spr)
 	END IF
@@ -713,18 +734,15 @@ SUB updScreen
 					LOCATE x, y: COLOR gridColor: PRINT CHR$(254)
 				END IF
 			NEXT
-		NEXT
-		
+		NEXT		
 		FOR x = 0 TO 8
 			FOR y = 0 TO 8
 				PSET (x + 110, y + 80), drawGrid(y, x)
 			NEXT
-		NEXT
-		
+		NEXT		
 		FOR i = 1 TO 16
 			LOCATE 18, i + 12: COLOR colorPalette(i): PRINT CHR$(254)
-		NEXT
-				
+		NEXT				
 		IF setMode = "DRAW" THEN LOCATE cursor.x, cursor.y: COLOR cursor.clr: PRINT CHR$(254)
 		IF setMode = "PICK COLOR" THEN LOCATE cursor.x, cursor.y: COLOR cursor.y - 12: PRINT CHR$(248)
 	END IF	
