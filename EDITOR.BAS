@@ -397,7 +397,7 @@ SUB initEditor
 	gameCam.y = 11
 	maxSprite = 64
 	
-	visDist = 4
+	visDist = 5
 		
 	FOR x = 1 TO 8
 		FOR y = 1 TO 8
@@ -541,83 +541,88 @@ SUB updEntity
 
 	IF sysApp = "GAME" THEN
 	FOR i = 1 TO entityCount
-		IF entity(i).hp <= 0 THEN GOTO skipAi	 				
-		mapGrid(entity(i).x, entity(i).y) = entity(i).lastTile		
-		SELECT CASE entity(i).state		
-			CASE 1
-				IF entity(i).direction = 0 THEN
-					dx = 1: dy = 0
-				ELSEIF entity(i).direction = 1 THEN
-					dx = -1: dy = 0
-				ELSEIF entity(i).direction = 2 THEN
+		IF entity(i).hp <= 0 THEN GOTO skipAi		
+		mapGrid(entity(i).x, entity(i).y) = entity(i).lastTile
+		
+		IF entity(i).state = 1 THEN
+			IF entity(i).direction = 0 THEN
+				dx = 1: dy = 0
+			ELSEIF entity(i).direction = 1 THEN
+				dx = -1: dy = 0
+			ELSEIF entity(i).direction = 2 THEN
 					dx = 0: dy = -1
-				ELSEIF entity(i).direction = 3 THEN
-					dx = 0: dy = 1
-				END IF				
-				newx = entity(i).x + dx
-				newy = entity(i).y + dy		
-				IF mapGrid(newx, newy) = 0 AND entity(i).steps < RND * 4 THEN
-					entity(i).x = newx
-					entity(i).y = newy
-					entity(i).steps = entity(i).steps + 1
+			ELSEIF entity(i).direction = 3 THEN
+				dx = 0: dy = 1
+			END IF				
+			newx = entity(i).x + dx
+			newy = entity(i).y + dy		
+			IF mapGrid(newx, newy) = 0 AND entity(i).steps < RND * 3 THEN
+				entity(i).x = newx
+				entity(i).y = newy
+				entity(i).steps = entity(i).steps + 1	
+			ELSE
+				entity(i).steps = 0
+				entity(i).direction = RND * 4
+				entity(i).state = 2
+			END IF
+						
+		ELSEIF entity(i).state = 2 THEN
+			currentx = entity(i).x
+			currenty = entity(i).y	
+			FOR x = entity(i).x - visDist TO entity(i).x + visDist
+				FOR y = entity(i).y - visDist TO entity(i).y + visDist						
+					IF mapGrid(x, y) = user.spr THEN	
+						dx = entity(i).x - x
+						dy = entity(i).y - y
+						entity(i).state = 2
+					ELSE
+						entity(i).state = 1
+					END IF				
+				NEXT
+			NEXT		
+			IF dx < 0 AND dy < 0 THEN
+				rand = RND * 2
+				IF rand = 1 THEN
+					entity(i).x = entity(i).x + 1						
 				ELSE
-					entity(i).steps = 0
-					entity(i).direction = RND * 4
+					entity(i).y = entity(i).y + 1
 				END IF
-				
-			CASE 2				
-				currentx = entity(i).x
-				currenty = entity(i).y	
-				FOR x = entity(i).x - visDist TO entity(i).x + visDist
-					FOR y = entity(i).y - visDist TO entity(i).y + visDist
-						IF mapGrid(x, y) = user.spr THEN	
-							dx = entity(i).x - x
-							dy = entity(i).y - y				
-						END IF				
-					NEXT
-				NEXT		
-				IF dx < 0 AND dy < 0 THEN
-					rand = RND * 2
-					IF rand = 1 THEN
-						entity(i).x = entity(i).x + 1						
-					ELSE
-						entity(i).y = entity(i).y + 1
-					END IF
-				ELSEIF dx > 0 AND dy > 0 THEN
-					rand = RND * 2
-					IF rand = 1 THEN
-						entity(i).x = entity(i).x - 1
-					ELSE
-						entity(i).y = entity(i).y - 1
-					END IF
-				ELSEIF dx < 0 AND dy > 0 THEN
-					rand = RND * 2
-					IF rand = 1 THEN
-						entity(i).x = entity(i).x + 1
-					ELSE
-						entity(i).y = entity(i).y - 1
-					END IF
-				ELSEIF dx > 0 AND dy < 0 THEN
-					rand = RND * 2
-					IF rand = 1 THEN						
-						entity(i).x = entity(i).x - 1
-					ELSE
-						entity(i).y = entity(i).y + 1
-					END IF
-				ELSEIF dx = 0 AND dy < 0 THEN entity(i).y = entity(i).y + 1	
-				ELSEIF dx = 0 AND dy > 0 THEN entity(i).y = entity(i).y - 1					
-				ELSEIF dx < 0 AND dy = 0 THEN entity(i).x = entity(i).x + 1				
-				ELSEIF dx > 0 AND dy = 0 THEN entity(i).x = entity(i).x - 1						
-				ELSEIF dx = 0 AND dy = 0 THEN 
+			ELSEIF dx > 0 AND dy > 0 THEN
+				rand = RND * 2
+				IF rand = 1 THEN
+					entity(i).x = entity(i).x - 1
+				ELSE
+					entity(i).y = entity(i).y - 1
 				END IF
+			ELSEIF dx < 0 AND dy > 0 THEN
+				rand = RND * 2
+				IF rand = 1 THEN
+					entity(i).x = entity(i).x + 1
+				ELSE
+					entity(i).y = entity(i).y - 1
+				END IF
+			ELSEIF dx > 0 AND dy < 0 THEN
+				rand = RND * 2
+				IF rand = 1 THEN						
+					entity(i).x = entity(i).x - 1
+				ELSE
+					entity(i).y = entity(i).y + 1
+				END IF
+			ELSEIF dx = 0 AND dy < 0 THEN entity(i).y = entity(i).y + 1	
+			ELSEIF dx = 0 AND dy > 0 THEN entity(i).y = entity(i).y - 1					
+			ELSEIF dx < 0 AND dy = 0 THEN entity(i).x = entity(i).x + 1				
+			ELSEIF dx > 0 AND dy = 0 THEN entity(i).x = entity(i).x - 1						
+			ELSEIF dx = 0 AND dy = 0 THEN 
+			END IF
 			
-				collide = mapGrid(entity(i).x, entity(i).y)											
-				IF collide THEN
-					IF collide = user.spr THEN user.hp = user.hp - 5
-					entity(i).x = currentx
-					entity(i).y = currenty		
-				END IF
-		END SELECT			
+			collide = mapGrid(entity(i).x, entity(i).y)											
+			IF collide THEN
+				IF collide = user.spr THEN user.hp = user.hp - 5
+				entity(i).x = currentx
+				entity(i).y = currenty		
+				entity(i).state = 1
+			END IF
+		END IF
 		entity(i).lastTile = mapGrid(entity(i).x, entity(i).y)
 		mapGrid(entity(i).x, entity(i).y) = entity(i).spr	
 skipAi:
