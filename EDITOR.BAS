@@ -17,11 +17,11 @@ TYPE obj
 	y AS INTEGER
 	barx AS INTEGER
 	bary AS INTEGER
-	firstTarget AS INTEGER
-	secondTarget AS INTEGER
-	thirdTarget AS INTEGER
-	currentTarget AS INTEGER
+	visDist AS INTEGER
+	maxTarget AS INTEGER
 	targetCount AS INTEGER
+	closestTarget AS INTEGER
+	maxDist AS INTEGER
 	picked AS INTEGER
 	clr AS INTEGER
 	spr AS INTEGER
@@ -39,11 +39,6 @@ DIM SHARED gameCam  AS obj
 DIM SHARED mapWindow AS obj
 DIM SHARED visibleObjList(4) AS obj
 
-DIM SHARED maxTarget
-DIM SHARED minDistance
-DIM SHARED visDist
-DIM SHARED maxAi
-
 DIM SHARED mapGrid(100, 100)
 DIM SHARED drawGrid(8, 8)
 DIM SHARED spriteGrid(8, 8)
@@ -55,6 +50,7 @@ DIM SHARED cursorSprite(84)
 DIM SHARED maxSprite
 DIM SHARED spriteSize
 DIM SHARED mapSize
+DIM SHARED maxActor
 
 DIM SHARED gridColor
 DIM SHARED consoleColor
@@ -160,9 +156,11 @@ SUB getInput
 		
 	CASE 15
 	' pos cursor to sprite bar (TAB)
-		setMode = "SPRITE BAR"
-		renderSprGrid = 1
-		setCursorPos
+		IF sysApp <> "GAME" THEN 
+			setMode = "SPRITE BAR"
+			renderSprGrid = 1
+			setCursorPos
+		END IF
 
 	CASE 82
 	' pos cursor to pick a color in spr mode (INS)
@@ -333,19 +331,19 @@ END SUB
 
 SUB handleGame
 
+	maxActor = 16	
+	maxTarget = 4
 	user.spr = 1
 	user.hp = 50	
 	entityCount = 0
 	
 	FOR x = 1 to mapSize
 		FOR y = 1 to mapSize
-			IF mapGrid(x, y) = 2 AND entityCount < maxAi THEN
+			IF mapGrid(x, y) = 2 and entityCount < maxActor THEN
 				entityCount = entityCount + 1
-				entity(entityCount).firstTarget = user.spr
-				entity(entityCount).secondTarget = 32
-				entity(entityCount).thirdTarget = 3
-				entity(entityCount).currentTarget = entity(entityCount).firstTarget
 				entity(entityCount).state = 1
+				entity(entityCount).maxDist = 10000
+				entity(entityCount).visDist = 4
 				entity(entityCount).x = x
 				entity(entityCount).y = y
 				entity(entityCount).hp = 25
@@ -380,7 +378,13 @@ END SUB
 
 SUB initEditor
 
-	SCREEN 13
+	SCREEN 13	
+	' game coords
+	user.x = 20
+	user.y = 11	
+	mapWindow.x = 30 - user.x
+	mapWindow.y = 49 - user.y	
+	' editor stuff
 	consoleColor = 43
 	sysApp = "SPRITE"
 	setMode = "DRAW"
@@ -395,16 +399,7 @@ SUB initEditor
 	gameCam.x = 30
 	gameCam.y = 11
 	maxSprite = 64
-	
-	maxTarget = 4
-	minDistance = 10000
-	maxAi = 16
-	visDist = 4
-	user.x = 20
-	user.y = 11	
-	mapWindow.x = 30 - user.x
-	mapWindow.y = 49 - user.y
-	
+		
 	FOR x = 1 TO 8
 		FOR y = 1 TO 8
 			index = index + 1
@@ -437,6 +432,7 @@ END SUB
 
 SUB setCursorPos
 
+	' this all needs rework
 	SELECT CASE setMode
 		CASE "DRAW"
 			cursor.x = 8
@@ -545,19 +541,12 @@ END SUB
 SUB updEntity
 
 	IF sysApp = "GAME" THEN
-	FOR i = 1 TO maxAi
+	FOR i = 1 TO maxActor
 		IF entity(i).hp <= 0 THEN GOTO skipAi	 				
-		mapGrid(entity(i).x, entity(i).y) = entity(i).ftile	
-		oldx = entity(i).x
-		oldy = entity(i).y		
-		entity(i).targetCount = 0
-		dx = 0
-		dy = 0
+		mapGrid(entity(i).x, entity(i).y) = entity(i).ftile			
 		
 		SELECT CASE entity(i).state		
 			CASE 1
-				dx = 0
-				dy = 0
 				IF entity(i).direction = 0 THEN
 					dx = 1: dy = 0
 				ELSEIF entity(i).direction = 1 THEN
@@ -577,49 +566,42 @@ SUB updEntity
 				ELSE
 					entity(i).steps = 0
 					entity(i).direction = RND * 4
+					' entity(i).state = 2
 				END IF
-								
+				
+			CASE 2	
+				oldx = entity(i).x
+				oldy = entity(i).y		
+				entity(i).targetCount = 0	
+				entity(i).maxDist = 10000
+				
+				visDist = entity(i).visDist
 				FOR x = entity(i).x - visDist TO entity(i).x + visDist
 					FOR y = entity(i).y - visDist TO entity(i).y + visDist
-						IF mapGrid(x, y) = entity(i).thirdTarget THEN
-							entity(i).state = 2
-							entity(i).currentTarget = entity(i).thirdTarget
-						ELSEIF mapGrid(x, y) = entity(i).secondTarget THEN 
-							entity(i).state = 2
-							entity(i).currentTarget = entity(i).secondTarget
-						ELSEIF mapGrid(x, y) = entity(i).firstTarget THEN 
-							entity(i).state = 2
-							entity(i).currentTarget = entity(i).firstTarget
-						END IF
-					NEXT
-				NEXT				
-
-			CASE 2						
-				dx = 0
-				dy = 0
-				FOR x = entity(i).x - visDist TO entity(i).x + visDist
-					FOR y = entity(i).y - visDist TO entity(i).y + visDist
-						IF mapGrid(x, y) = entity(i).currentTarget THEN
-							dx = entity(i).x - x
-							dy = entity(i).y - y	
+						IF mapGrid(x, y) = user.spr THEN								
 							IF entity(i).targetCount < maxTarget THEN
-								entity(i).targetCount = entity(i).targetCount + 1
-								visibleObjList(entity(i).targetCount).x = dx
-								visibleObjList(entity(i).targetCount).y = dy
+								entity(i).targetCount = entity(i).targetCount + 1								
+								visibleObjList(entity(i).targetCount).x = x
+								visibleObjList(entity(i).targetCount).y = y
 							END IF
 						END IF
 					NEXT
 				NEXT
-	
+							
 				FOR j = 1 TO entity(i).targetCount
-					dx = visibleObjList(j).x - entity(i).x
-					dy = visibleObjList(j).y - entity(i).y
-					IF dx < visDist AND dy < visDist THEN
-						closestTarget = j
-						dx = visibleObjList(closestTarget).x
-						dy = visibleObjList(closestTarget).y						
-					END IF						
-				NEXT		
+					dx = visibleObjList(j).x
+					dy = visibleObjList(j).y
+					distx = (dx - entity(i).x) * 2
+					disty = (dy - entity(i).y) * 2
+					dist = SQR(distx + disty)					
+					IF dist < entity(i).maxDist THEN					
+						dx = visibleObjList(j).x
+						dy = visibleObjList(j).y
+						entity(i).maxDist = (entity(i).maxDist - dist) * 2
+					END IF				
+				NEXT
+				
+				IF entity(i).targetCount = 0 THEN entity(i).state = 1
 				
 				IF dx < 0 AND dy < 0 THEN
 					rand = RND * 2
@@ -658,12 +640,11 @@ SUB updEntity
 			
 				collide = mapGrid(entity(i).x, entity(i).y)											
 				IF collide THEN
-					IF collide = entity(i).firstTarget THEN user.hp = user.hp - 5
+					IF collide = user.hp THEN user.hp = user.hp - 5
 					entity(i).x = oldx
 					entity(i).y = oldy
 					entity(i).state = 1					
 				END IF
-				ERASE visibleObjList				
 		END SELECT			
 		entity(i).ftile = mapGrid(entity(i).x, entity(i).y)
 		mapGrid(entity(i).x, entity(i).y) = entity(i).spr	
@@ -693,8 +674,8 @@ SUB updScreen
 		LOCATE 22, 30: COLOR consoleColor: PRINT "HP:"; user.hp
 		LOCATE 23, 30: COLOR modeColor: PRINT "x"; mapWindow.x; "y"; mapWindow.y		
 		'DEBUG_		
-		LOCATE 19,2 : COLOR 8: PRINT "target:"; entity(1).currentTarget
-		LOCATE 20, 2: COLOR 48: PRINT "state:"; entity(1).state
+		LOCATE 19, 2: COLOR 8: PRINT "target:"; 
+		LOCATE 20, 2: COLOR 48: PRINT "state:";
 	ELSE
 		' render sprite grid
 		IF renderSprGrid = 1 THEN
