@@ -8,7 +8,7 @@ DECLARE SUB initEditor ()
 DECLARE SUB setCursorPos ()
 DECLARE SUB updEntity ()
 DECLARE SUB sysConsole ()
-DECLARE SUB switchApp (app$)
+DECLARE SUB switchApp (appName$)
 
 RANDOMIZE TIMER
 ON ERROR GOTO BADFILE:
@@ -73,20 +73,20 @@ LOOP UNTIL closeApp = 1
 WHILE INKEY$ <> "": WEND
 SYSTEM
 
-SUB switchApp (app$)
+SUB switchApp (appName$)
 
-		IF app$ = "MAPPING" THEN 
+		IF appName$ = "MAPPING" THEN 
 			sysApp = "MAPPING"
 			setMode = "MAP GRID"
 			modeText = "MODE:MAPPER"
 			modeColor = 39			
-		ELSEIF app$ = "GAME" THEN
+		ELSEIF appName$ = "GAME" THEN
 			sysApp = "GAME"
 			setMode = "PLAY"
 			modeText = "MODE:GAME"
 			modeColor = 47
 			handleGame
-		ELSEIF app$ = "SPRITE" THEN
+		ELSEIF appName$ = "SPRITE" THEN
 			sysApp = "SPRITE"
 			setMode = "DRAW"
 			modeText = "MODE:SPRITE"
