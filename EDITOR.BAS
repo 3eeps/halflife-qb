@@ -562,9 +562,9 @@ SUB updEntity
 				entity(i).steps = entity(i).steps + 1	
 			ELSE
 				entity(i).steps = 0
-				entity(i).direction = RND * 4
-				entity(i).state = 2
+				entity(i).direction = RND * 4				
 			END IF
+			entity(i).state = 2
 						
 		ELSEIF entity(i).state = 2 THEN
 			currentx = entity(i).x
