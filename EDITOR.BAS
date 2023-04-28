@@ -25,7 +25,7 @@ TYPE obj
 	direction AS INTEGER
 	steps AS INTEGER
 	state AS INTEGER
-	ftile AS INTEGER
+	lastTile AS INTEGER
 END TYPE
 
 DIM SHARED user AS obj
@@ -47,13 +47,14 @@ DIM SHARED spriteSize
 DIM SHARED mapSize
 DIM SHARED maxActor
 DIM SHARED visDist
+DIM SHARED entityCount
 
 DIM SHARED gridColor
 DIM SHARED consoleColor
-DIM SHARED modeColor
+DIM SHARED appColor
 
 DIM SHARED consoleText AS STRING
-DIM SHARED modeText AS STRING
+DIM SHARED appText AS STRING
 DIM SHARED sysTask AS STRING
 DIM SHARED sysApp AS STRING
 DIM SHARED setMode AS STRING
@@ -78,19 +79,19 @@ SUB switchApp (appName$)
 		IF appName$ = "MAPPING" THEN 
 			sysApp = "MAPPING"
 			setMode = "MAP GRID"
-			modeText = "MODE:MAPPER"
-			modeColor = 39			
+			appText = "MODE:MAPPER"
+			appColor = 39			
 		ELSEIF appName$ = "GAME" THEN
 			sysApp = "GAME"
 			setMode = "PLAY"
-			modeText = "MODE:GAME"
-			modeColor = 47
+			appText = "MODE:GAME"
+			appColor = 47
 			handleGame
 		ELSEIF appName$ = "SPRITE" THEN
 			sysApp = "SPRITE"
 			setMode = "DRAW"
-			modeText = "MODE:SPRITE"
-			modeColor = 52
+			appText = "MODE:SPRITE"
+			appColor = 52
 		END IF
 		setCursorPos
 		CLS
@@ -99,7 +100,7 @@ END SUB
 
 SUB getInput
 
-	IF sysApp = "GAME" THEN mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.ftile	
+	IF sysApp = "GAME" THEN mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.lastTile	
 	k = INP(96)
 	SELECT CASE k
 	CASE 17
@@ -201,7 +202,7 @@ SUB getInput
 		END IF
 	END SELECT
 	IF sysApp = "GAME" THEN
-		user.ftile = mapGrid(mapWindow.x + user.x, mapWindow.y + user.y)
+		user.lastTile = mapGrid(mapWindow.x + user.x, mapWindow.y + user.y)
 		mapGrid(mapWindow.x + user.x, mapWindow.y + user.y) = user.spr		
 	END IF
 
@@ -339,6 +340,7 @@ SUB handleGame
 	FOR x = 1 to mapSize
 		FOR y = 1 to mapSize
 			IF mapGrid(x, y) = 2 and entityCount < maxActor THEN
+				entityCount = entityCount + 1
 				entity(entityCount).spr = 2	' zombie!			
 				entity(entityCount).x = x
 				entity(entityCount).y = y
@@ -346,9 +348,8 @@ SUB handleGame
 				entity(entityCount).hp = 25
 				entity(entityCount).steps = 0
 				entity(entityCount).direction = RND * 4				
-				mapGrid(entity(entityCount).x, entity(entityCount).y) = entity(entityCount).ftile	
-				mapGrid(entity(entityCount).x, entity(entityCount).y) = entity(entityCount).spr
-				entityCount = entityCount + 1
+				mapGrid(entity(entityCount).x, entity(entityCount).y) = entity(entityCount).lastTile	
+				mapGrid(entity(entityCount).x, entity(entityCount).y) = entity(entityCount).spr			
 			END IF
 		NEXT
 	NEXT
@@ -384,11 +385,11 @@ SUB initEditor
 	consoleColor = 43
 	sysApp = "SPRITE"
 	setMode = "DRAW"
-	modeColor = 52
-	modeText = "MODE:SPRITE"
+	appColor = 52
+	appText = "MODE:SPRITE"
 	setCursorPos
 	cursor.spr = 42
-	cursor.clr = modeColor
+	cursor.clr = appColor
 	gridColor = 5
 	mapSize = 100
 	spriteSize = 7
@@ -539,12 +540,9 @@ END SUB
 SUB updEntity
 
 	IF sysApp = "GAME" THEN
-	FOR i = 1 TO maxActor
+	FOR i = 1 TO entityCount
 		IF entity(i).hp <= 0 THEN GOTO skipAi	 				
-		mapGrid(entity(i).x, entity(i).y) = entity(i).ftile		
-		dx = 0
-		dy = 0
-		
+		mapGrid(entity(i).x, entity(i).y) = entity(i).lastTile		
 		SELECT CASE entity(i).state		
 			CASE 1
 				IF entity(i).direction = 0 THEN
@@ -565,23 +563,19 @@ SUB updEntity
 				ELSE
 					entity(i).steps = 0
 					entity(i).direction = RND * 4
-					entity(i).state = 2
 				END IF
 				
 			CASE 2				
 				currentx = entity(i).x
-				currenty = entity(i).y			
+				currenty = entity(i).y	
 				FOR x = entity(i).x - visDist TO entity(i).x + visDist
 					FOR y = entity(i).y - visDist TO entity(i).y + visDist
-						IF mapGrid(x, y) = user.spr THEN								
+						IF mapGrid(x, y) = user.spr THEN	
 							dx = entity(i).x - x
-							dy = entity(i).y - y 
-						ELSE
-							entity(i).state = 1
+							dy = entity(i).y - y				
 						END IF				
 					NEXT
-				NEXT
-		
+				NEXT		
 				IF dx < 0 AND dy < 0 THEN
 					rand = RND * 2
 					IF rand = 1 THEN
@@ -622,10 +616,9 @@ SUB updEntity
 					IF collide = user.spr THEN user.hp = user.hp - 5
 					entity(i).x = currentx
 					entity(i).y = currenty		
-					entity(i).state = 1
 				END IF
 		END SELECT			
-		entity(i).ftile = mapGrid(entity(i).x, entity(i).y)
+		entity(i).lastTile = mapGrid(entity(i).x, entity(i).y)
 		mapGrid(entity(i).x, entity(i).y) = entity(i).spr	
 skipAi:
 	NEXT
@@ -635,10 +628,10 @@ END SUB
 
 SUB updScreen
 
-	COLOR modeColor
-	LINE (0, 0)-(320, 16), modeColor, BF
+	COLOR appColor
+	LINE (0, 0)-(320, 16), appColor, BF
 	LOCATE 2, 2: PRINT "FILE:"; 
-	LOCATE 2, 29: PRINT modeText
+	LOCATE 2, 29: PRINT appText
 	WAIT &H3DA, 8	
 	
 	' render game tab
@@ -651,7 +644,7 @@ SUB updScreen
 			NEXT
 		NEXT				
 		LOCATE 22, 30: COLOR consoleColor: PRINT "HP:"; user.hp
-		LOCATE 23, 30: COLOR modeColor: PRINT "x"; mapWindow.x; "y"; mapWindow.y			
+		LOCATE 23, 30: COLOR appColor: PRINT "x"; mapWindow.x; "y"; mapWindow.y			
 		'DEBUG_	
 		LOCATE 22, 2: COLOR 48: PRINT "state:"; entity(1).state
 	ELSE
@@ -675,8 +668,8 @@ SUB updScreen
 				IF index THEN PUT (x * 8, y * 8), spriteIndex(44 * index)
 			NEXT
 		NEXT
-		LOCATE 22, 28: COLOR modeColor: PRINT "sprindex"; spriteGridIndex(cursor.barx, cursor.bary)
-		LOCATE 23, 30: COLOR modeColor: PRINT "x"; gameCam.x; "y"; gameCam.y
+		LOCATE 22, 28: COLOR appColor: PRINT "sprindex"; spriteGridIndex(cursor.barx, cursor.bary)
+		LOCATE 23, 30: COLOR appColor: PRINT "x"; gameCam.x; "y"; gameCam.y
 		PUT (240, 88), cursorSprite(cursor.spr)
 	END IF
 	
