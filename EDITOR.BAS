@@ -635,7 +635,7 @@ SUB updScreen
 	LOCATE 2, 29: PRINT appText$
 	WAIT &H3DA, 8	
 	
-	' render game tab
+	' render game app
 	IF sysApp$ = "GAME" THEN
 		LINE (80, 24)-(212, 160), 0, BF
 		FOR x = 1 TO mapSizeX
@@ -660,7 +660,7 @@ SUB updScreen
 		IF setMode$ = "SPRITE BAR" THEN PUT ((cursor.barx + 2) * 8, (cursor.bary + 2) * 8), cursorSprite(42)
 	END IF
 	
-	' render map tab
+	' render map app
 	IF sysApp$ = "MAPPING" THEN
 		LINE (176, 24)-(312, 160), 0, BF
 		FOR x = 1 TO mapSizeX
@@ -674,7 +674,7 @@ SUB updScreen
 		PUT (240, 88), cursorSprite(cursor.spr)
 	END IF
 	
-	' render sprite tab
+	' render sprite app
 	IF sysApp$ = "SPRITE" THEN
 		FOR x = 8 TO 15
 			FOR y = 16 TO 23
