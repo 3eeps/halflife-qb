@@ -34,12 +34,13 @@ DIM SHARED cursor AS obj
 
 DIM SHARED mapGrid(40, 25)
 DIM SHARED drawGrid(8, 8), spriteGrid(8, 8), spriteGridIndex(8, 8), dataArray(8, 8)
+DIM SHARED renderSprGrid
 DIM SHARED spriteIndex(3200)
 DIM SHARED colorPalette(16)
 DIM SHARED cursorSprite(84)
 DIM SHARED maxSprite
 DIM SHARED spriteSize
-DIM SHARED mapSizeX, mapSizeY, mapMinSize
+DIM SHARED mapSizeX, mapSizeY
 DIM SHARED gridSizeX, gridSizeY
 DIM SHARED maxActor
 DIM SHARED visDist
@@ -96,7 +97,7 @@ SUB getInput
 	' move cursor (W)
 		IF setMode$ = "PLAY" THEN user.y = user.y - 1
 		IF setMode$ = "SPRITE BAR" AND cursor.bary - 1 > 0 THEN cursor.bary = cursor.bary - 1
-		IF sysApp$ = "MAPPING" AND setMode$ = "MAP GRID" AND cursor.y > 0 THEN cursor.y = cursor.y - 1
+		IF sysApp$ = "MAPPING" AND setMode$ = "MAP GRID" THEN cursor.y = cursor.y - 1
 		IF sysApp$ = "SPRITE" THEN
 			IF setMode$ = "DRAW" AND cursor.x > 8 AND cursor.x < 16 THEN cursor.x = cursor.x - 1
 		END IF
@@ -105,7 +106,7 @@ SUB getInput
 	' move cursor (S)
 		IF setMode$ = "PLAY" THEN user.y = user.y + 1
 		IF setMode$ = "SPRITE BAR" AND cursor.bary + 1 < 9 THEN cursor.bary = cursor.bary + 1
-		IF sysApp$ = "MAPPING" AND setMode$ = "MAP GRID" AND cursor.y < 80 THEN cursor.y = cursor.y + 1
+		IF sysApp$ = "MAPPING" AND setMode$ = "MAP GRID" THEN cursor.y = cursor.y + 1
 		IF sysApp$ = "SPRITE" THEN
 			IF setMode$ = "DRAW" AND cursor.x > 7 AND cursor.x < 15 THEN cursor.x = cursor.x + 1
 		END IF
@@ -114,7 +115,7 @@ SUB getInput
 	' move cursor (A)
 		IF setMode$ = "PLAY" THEN user.x = user.x - 1
 		IF setMode$ = "SPRITE BAR" AND cursor.barx - 1 > 0 THEN cursor.barx = cursor.barx - 1
-		IF sysApp$ = "MAPPING" AND setMode$ = "MAP GRID" AND cursor.x > 0 THEN cursor.x = cursor.x - 1
+		IF sysApp$ = "MAPPING" AND setMode$ = "MAP GRID" THEN cursor.x = cursor.x - 1
 		IF sysApp$ = "SPRITE" THEN
 			IF setMode$ = "DRAW" AND cursor.y > 16 AND cursor.y < 24 THEN cursor.y = cursor.y - 1
 			IF setMode$ = "PICK COLOR" AND cursor.y > 13 AND cursor.y < 29 THEN cursor.y = cursor.y - 1
@@ -124,7 +125,7 @@ SUB getInput
 	' move cursor (D)
 		IF setMode$ = "PLAY" THEN user.x = user.x + 1
 		IF setMode$ = "SPRITE BAR" AND cursor.barx + 1 < 9 THEN cursor.barx = cursor.barx + 1
-		IF sysApp$ = "MAPPING" AND setMode$ = "MAP GRID" AND cursor.x < 80 THEN cursor.x = cursor.x + 1
+		IF sysApp$ = "MAPPING" AND setMode$ = "MAP GRID" THEN cursor.x = cursor.x + 1
 		IF sysApp$ = "SPRITE" THEN
 			IF setMode$ = "DRAW" AND cursor.y > 15 AND cursor.y < 23 THEN cursor.y = cursor.y + 1
 			IF setMode$ = "PICK COLOR" AND cursor.y > 11 AND cursor.y < 28 THEN cursor.y = cursor.y + 1
@@ -328,7 +329,8 @@ SUB handleGame
 	user.y = 11
 	user.spr = 33 ' gordon!
 	user.hp = 50	
-	entityCount = 0	
+	entityCount = 0
+	
 	FOR x = 1 to mapSizeX
 		FOR y = 1 to mapSizeY
 			IF mapGrid(x, y) = 2 and entityCount < maxActor THEN
@@ -353,8 +355,7 @@ SUB handleSprite
 	WHILE INKEY$ <> "": WEND
 	SELECT CASE sysTask$
 		CASE "DEL PIXEL"
-			 drawGrid(cursor.x - 8, cursor.y - 16) = 0
-			 
+			 drawGrid(cursor.x - 8, cursor.y - 16) = 0			 
 		CASE "PLACE"
 			renderSprGrid = 1
 			index = spriteGridIndex(cursor.barx, cursor.bary)
@@ -378,16 +379,15 @@ SUB initEditor
 	gridColor = 5
 	gridSizeX = 8
 	gridSizeY = 8
-	mapMinSize = 1
-	
-	mapSizeX = 40
-	mapSizeY = 25
+	mapSizeX = 38
+	mapSizeY = 23
+	' fix this issue too, should be 8 (saving sprites to file prob)
 	spriteSize = 7
 	maxSprite = 64	
 	visDist = 5
 		
-	FOR x = 1 TO 8
-		FOR y = 1 TO 8
+	FOR x = 1 TO gridSizeX
+		FOR y = 1 TO gridSizeY
 			index = index + 1
 			spriteGridIndex(x, y) = index
 		NEXT
@@ -398,13 +398,13 @@ SUB initEditor
 	NEXT
 
 	OPEN "CURSOR.GFX" FOR INPUT AS #1
-	FOR x = 0 TO 8
+	FOR x = 0 TO 8 ' sprite size should be 8
 		FOR y = 0 TO 8
 			INPUT #1, dataArray(x, y)
 		NEXT
 	NEXT
 	CLOSE #1
-	FOR x = 0 TO 8
+	FOR x = 0 TO 8 ' sprite size should be 8
 		FOR y = 0 TO 8
 			PSET (x, y), dataArray(x, y)
 		NEXT
@@ -638,8 +638,8 @@ SUB updScreen
 	' render game tab
 	IF sysApp$ = "GAME" THEN
 		LINE (80, 24)-(212, 160), 0, BF
-		FOR x = 1 TO 38
-			FOR y = 1 TO 23		
+		FOR x = 1 TO mapSizeX
+			FOR y = 1 TO mapSizeY		
 				index = mapGrid(x, y)				
 				IF index THEN PUT (x * 8, y * 8), spriteIndex(44 * index)
 			NEXT
@@ -651,8 +651,8 @@ SUB updScreen
 	ELSE
 		' render sprite grid
 		LINE (24, 24)-(88, 88), 0, BF
-		FOR x = 1 TO 8
-			FOR y = 1 TO 8
+		FOR x = 1 TO gridSizeX
+			FOR y = 1 TO gridSizeY
 				index = spriteGrid(x, y)
 				IF index THEN PUT ((x + 2) * 8, (y + 2) * 8), spriteIndex(44 * index)
 			NEXT
@@ -685,10 +685,9 @@ SUB updScreen
 				END IF
 			NEXT
 		NEXT		
-		
-' fix this?
-		FOR x = 0 TO 8
-			FOR y = 0 TO 8
+
+		FOR x = 0 TO gridSizeX
+			FOR y = 0 TO gridSizeY
 				PSET (x + 110, y + 80), drawGrid(y, x)
 			NEXT
 		NEXT		
