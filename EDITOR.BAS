@@ -16,6 +16,8 @@ ON ERROR GOTO BADFILE:
 TYPE obj
 	x AS INTEGER
 	y AS INTEGER
+	oldx AS INTEGER
+	oldy AS INTEGER
 	barx AS INTEGER
 	bary AS INTEGER
 	picked AS INTEGER
@@ -28,9 +30,7 @@ TYPE obj
 	lastTile AS INTEGER
 END TYPE
 
-DIM SHARED user AS obj
-DIM SHARED actor(16) AS obj
-DIM SHARED cursor AS obj
+DIM SHARED user AS obj, actor(16) AS obj, cursor AS obj
 
 DIM SHARED mapGrid(40, 25), drawGrid(8, 8), spriteGrid(8, 8), spriteGridIndex(8, 8), dataArray(8, 8)
 DIM SHARED spriteIndex(3200), cursorSprite(84)
@@ -84,7 +84,8 @@ END SUB
 
 SUB getInput
 
-	'mapGrid(user.x, user.y) = 0
+	user.lastTile = mapGrid(user.x, user.y)
+	
 	k = INP(96)	
 	SELECT CASE k
 	CASE 17
@@ -113,7 +114,7 @@ SUB getInput
 	' move cursor (A)
 		IF setMode$ = "PLAY" THEN 
 			user.x = user.x - 1
-		END IF
+		END IF	
 		IF setMode$ = "SPRITE BAR" AND cursor.barx - 1 > 0 THEN cursor.barx = cursor.barx - 1
 		IF sysApp$ = "MAPPING" AND setMode$ = "MAP GRID" THEN user.x = user.x - 1
 		IF sysApp$ = "SPRITE" THEN
@@ -123,7 +124,7 @@ SUB getInput
 
 	CASE 32
 	' move cursor (D)
-		IF setMode$ = "PLAY" THEN
+		IF setMode$ = "PLAY" THEN 
 			user.x = user.x + 1
 		END IF
 		IF setMode$ = "SPRITE BAR" AND cursor.barx + 1 < 9 THEN cursor.barx = cursor.barx + 1
@@ -193,8 +194,7 @@ SUB getInput
 			END IF
 		END IF
 	END SELECT
-	'mapGrid(user.x, user.y) = 0
-
+	mapGrid(user.x, user.y) = user.spr
 END SUB
 
 SUB handleFile
@@ -203,6 +203,7 @@ SUB handleFile
 	WHILE INKEY$ <> "": WEND
 	SELECT CASE sysTask$
 		CASE "NEW"
+			' clears current map or sprite grid
 			IF sysApp$ = "SPRITE" THEN
 				ERASE drawGrid
 			ELSE
@@ -211,6 +212,7 @@ SUB handleFile
 			fileName$ = ""
 
 		CASE "SAVE GFX"
+			' this needs to be redone!
 			LOCATE 23, 2: INPUT "GFX NAME:", fileName$
 			OPEN fileName$ FOR OUTPUT AS #1
 			FOR x = 0 TO 8
@@ -226,6 +228,7 @@ SUB handleFile
 			CLOSE #1
 
 		CASE "LOAD GFX"
+			' load sprites from .GFX file
 			LOCATE 23, 2: INPUT "LOAD GFX:", fileName$
 			OPEN fileName$ FOR INPUT AS #1
 			FOR x = 0 TO 8
@@ -236,6 +239,7 @@ SUB handleFile
 			CLOSE #1
 
 		CASE "SAVE PAK"
+			' saves all sprites found in current sprite grid into a .PAK file
 			LOCATE 23, 2: INPUT "PAK NAME:", fileName$
 			OPEN fileName$ FOR OUTPUT AS #1
 			fileLen = (maxSprite * 44)
@@ -324,33 +328,35 @@ SUB handleGame
 
 	user.x = 20
 	user.y = 11
-	user.spr = 33 ' gordon!
+	user.spr = 33 * 44 ' gordon!
 	user.hp = 50	
-	user.lastTile = user.spr
-	'mapGrid(user.x, user.y) = user.spr
+	user.lastTile = mapGrid(user.x, user.y)
 	
-	' generate actors
+	' generate actors using user made map
 	maxActor = 16	
 	actorNum = 0		
 	FOR x = 1 to mapSizeX
 		FOR y = 1 to mapSizeY
 			IF mapGrid(x, y) = 2 and actorNum < maxActor THEN
 				actorNum = actorNum + 1
-				actor(actorNum).spr = 2	' zombie!			
+				actor(actorNum).spr = 2 * 44	' zombie!			
 				actor(actorNum).x = x
 				actor(actorNum).y = y
 				actor(actorNum).state = 1
 				actor(actorNum).hp = 25
 				actor(actorNum).steps = 0
 				actor(actorNum).direction = RND * 4				
-				actor(actorNum).lastTile = actor(actorNum).spr
 				mapGrid(actor(actorNum).x, actor(actorNum).y) = actor(actorNum).spr			
 			END IF
 		NEXT
 	NEXT
 	
-	' calculate sprite index here not during draw time
-	' aka for loop through mapgrid and times all by 44
+	FOR x = 1 to mapSizeX
+		FOR y = 1 to mapSizeY
+			sprite = mapGrid(x, y)
+			IF sprite THEN mapGrid(x, y) = sprite * 44
+		NEXT
+	NEXT
 	
 END SUB
 
@@ -388,7 +394,7 @@ SUB initEditor
 	
 	' fix this issue too, should be 8 (saving sprites to file prob)
 	spriteSize = 7
-	maxSprite = 64	
+	maxSprite = 64 
 	visDist = 5
 		
 	FOR x = 1 TO gridSizeX
@@ -402,6 +408,7 @@ SUB initEditor
 		colorPalette(i) = i
 	NEXT
 
+	' redo this to a better file format
 	OPEN "CURSOR.GFX" FOR INPUT AS #1
 	FOR x = 0 TO 8 
 		FOR y = 0 TO 8
@@ -525,12 +532,11 @@ SUB sysConsole
 
 END SUB
 
-SUB updactor
+SUB updActor
 
 	IF sysApp$ = "GAME" THEN
 	FOR i = 1 TO actorNum
 		IF actor(i).hp <= 0 THEN GOTO skipAi		
-		mapGrid(actor(i).x, actor(i).y) = actor(i).lastTile
 		
 		IF actor(i).state = 1 THEN
 			IF actor(i).direction = 0 THEN
@@ -624,7 +630,6 @@ SUB updactor
 				actor(i).state = 1
 			END IF
 		END IF
-		actor(i).lastTile = mapGrid(actor(i).x, actor(i).y)
 		mapGrid(actor(i).x, actor(i).y) = actor(i).spr	
 skipAi:
 	NEXT
@@ -683,12 +688,11 @@ SUB updScreen
 		FOR x = 1 TO mapSizeX
 			FOR y = 1 TO mapSizeY		
 				index = mapGrid(x, y)				
-				IF index THEN PUT (x * 8, y * 8), spriteIndex(44 * index)
+				IF index THEN PUT (x * 8, y * 8), spriteIndex(index)
 			NEXT
-		NEXT				
+		NEXT
 
-		LOCATE 23, 30: COLOR appColor: PRINT "x"; user.x; "y";user.y					
-		PUT (user.x * 8, user.y * 8), spriteIndex(44 * user.spr)
+		LOCATE 23, 30: COLOR appColor: PRINT "x"; user.x; "y";user.y
 		
 	ELSE
 		' render sprite grid
