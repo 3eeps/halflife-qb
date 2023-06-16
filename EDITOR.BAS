@@ -33,8 +33,7 @@ END TYPE
 DIM SHARED user AS obj, actor(16) AS obj, cursor AS obj
 
 DIM SHARED mapGrid(40, 25), drawGrid(8, 8), spriteGrid(8, 8), spriteGridIndex(8, 8), dataArray(8, 8)
-DIM SHARED spriteIndex(3200), cursorSprite(84)
-DIM SHARED colorPalette(16)
+DIM SHARED spriteIndex(3200), cursorSprite(84), colorPalette(16)
 
 DIM SHARED maxSprite, spriteSize
 DIM SHARED mapSizeX, mapSizeY
@@ -83,14 +82,15 @@ SUB switchApp (appName$)
 END SUB
 
 SUB getInput
-
-	mapGrid(user.x, user.y) = user.lastTile 
 	
+	mapGrid(user.oldx, user.oldy) = 0	
 	k = INP(96)	
 	SELECT CASE k
 	CASE 17
 	' move cursor (W)
 		IF setMode$ = "PLAY" THEN 
+			user.oldx = user.x
+			user.oldy = user.y
 			user.y = user.y - 1
 		END IF
 		IF setMode$ = "SPRITE BAR" AND cursor.bary - 1 > 0 THEN cursor.bary = cursor.bary - 1
@@ -102,6 +102,8 @@ SUB getInput
 	CASE 31
 	' move cursor (S)
 		IF setMode$ = "PLAY" THEN 
+			user.oldx = user.x
+			user.oldy = user.y
 			user.y = user.y + 1
 		END IF
 		IF setMode$ = "SPRITE BAR" AND cursor.bary + 1 < 9 THEN cursor.bary = cursor.bary + 1
@@ -113,6 +115,8 @@ SUB getInput
 	CASE 30
 	' move cursor (A)
 		IF setMode$ = "PLAY" THEN 
+			user.oldx = user.x
+			user.oldy = user.y
 			user.x = user.x - 1
 		END IF	
 		IF setMode$ = "SPRITE BAR" AND cursor.barx - 1 > 0 THEN cursor.barx = cursor.barx - 1
@@ -125,6 +129,8 @@ SUB getInput
 	CASE 32
 	' move cursor (D)
 		IF setMode$ = "PLAY" THEN 
+			user.oldx = user.x
+			user.oldy = user.y
 			user.x = user.x + 1
 		END IF
 		IF setMode$ = "SPRITE BAR" AND cursor.barx + 1 < 9 THEN cursor.barx = cursor.barx + 1
@@ -194,7 +200,6 @@ SUB getInput
 			END IF
 		END IF
 	END SELECT
-	mapGrid(user.oldx, user.oldy) = user.lastTile
 	mapGrid(user.x, user.y) = user.spr
 END SUB
 
