@@ -84,7 +84,7 @@ END SUB
 
 SUB getInput
 
-	user.lastTile = mapGrid(user.x, user.y)
+	mapGrid(user.x, user.y) = user.lastTile 
 	
 	k = INP(96)	
 	SELECT CASE k
@@ -194,6 +194,7 @@ SUB getInput
 			END IF
 		END IF
 	END SELECT
+	mapGrid(user.oldx, user.oldy) = user.lastTile
 	mapGrid(user.x, user.y) = user.spr
 END SUB
 
