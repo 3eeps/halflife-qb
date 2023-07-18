@@ -713,4 +713,3 @@ SUB updScreen
 	END IF
 	
 END SUB
-
